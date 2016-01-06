@@ -51,6 +51,8 @@ public class SettingsActivity extends PreferenceActivity implements PreferenceBi
         super.onBackPressed();
     }
 
+
+
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);

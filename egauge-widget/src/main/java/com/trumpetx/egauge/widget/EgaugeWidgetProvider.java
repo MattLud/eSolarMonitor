@@ -18,7 +18,7 @@ import com.trumpetx.egauge.widget.util.Callback;
 import com.trumpetx.egauge.widget.util.EgaugeApiService;
 import com.trumpetx.egauge.widget.util.EgaugeIntents;
 import com.trumpetx.egauge.widget.util.NetworkConnection;
-import com.trumpetx.egauge.widget.xml.Data;
+import com.trumpetx.egauge.widget.xml.EGaugeResponse;
 import com.trumpetx.egauge.widget.xml.Register;
 
 import java.text.DateFormat;
@@ -31,7 +31,7 @@ import java.util.Map;
 public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String LOG_TAG = "eGaugeWidget";
     private static final String POWER = "P";
-    private DateFormat df = new SimpleDateFormat("hh:mm");
+    private DateFormat df = new SimpleDateFormat("hh:mma");
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -71,6 +71,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             for (final int appWidgetId : appWidgetIds) {
                 Log.i(LOG_TAG, "Updating eGauge widgets " + appWidgetId);
                 try {
+
+                    //Note - look into replacing with asynctask
                     EgaugeApiService.getInstance(context).getData(new Callback() {
                         @Override
                         public void callback(Object object) {
@@ -82,14 +84,14 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                             }
                             if (object instanceof String) {
                                 views.setTextViewText(R.id.displayLabel, (String) object);
-                            } else if (object instanceof Data) {
+                            } else if (object instanceof EGaugeResponse) {
                                 Map<String, Register> registerNames = new HashMap<>();
-                                for (Register register : ((Data) object).getRegisters()) {
+                                for (Register register : ((EGaugeResponse) object).getRegisters()) {
                                     if (POWER.equals(register.getType()) && !register.getName().endsWith("+")) {
                                         registerNames.put(register.getName(), register);
                                     }
                                 }
-                                for (Register register : ((Data) object).getRegisters()) {
+                                for (Register register : ((EGaugeResponse) object).getRegisters()) {
                                     if (POWER.equals(register.getType()) && register.getName().endsWith("+")) {
                                         String nonPlusName = register.getName().substring(0, register.getName().length() - 1);
                                         registerNames.put(nonPlusName, register); // Overwrite the non-positive only register (don't want to double count)

@@ -26,15 +26,12 @@ import java.util.List;
     </data>
  */
 @Root(name = "data")
-public class Data {
+public class EGaugeResponse {
     @Attribute
     private String serial;
 
     @Element(name = "ts")
     private long timestamp;
-
-    @Element
-    private int gen;
 
     @ElementList(inline = true)
     private List<Register> registers;
@@ -55,13 +52,6 @@ public class Data {
         this.timestamp = timestamp;
     }
 
-    public int getGen() {
-        return gen;
-    }
-
-    public void setGen(int gen) {
-        this.gen = gen;
-    }
 
     public List<Register> getRegisters() {
         return registers;
