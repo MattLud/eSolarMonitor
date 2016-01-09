@@ -3,6 +3,7 @@ package com.trumpetx.egauge.widget.util;
 import android.content.Context;
 import android.util.Log;
 import com.trumpetx.egauge.widget.NotConfiguredException;
+import com.trumpetx.egauge.widget.util.tasks.EGaugeApiHistoricalData;
 import com.trumpetx.egauge.widget.xml.EGaugeResponse;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -17,9 +18,11 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class EgaugeApiService {
 
@@ -35,33 +38,34 @@ public class EgaugeApiService {
     }
 
     private static final String LOG_TAG = "eGaugeApiService";
-    private static final Map<String, String> DATA;
-    //look into having option for this; v1 was used but failed when lightgauge stopped returning gen object
-    static {
-        DATA = new HashMap<>();
-        DATA.put("inst", null);
 
-        DATA.put("v1", null);
-    }
+    //look into having option for this; v1 was used but failed when lightgauge stopped returning gen object
+
 
     private String urlBase;
 
-    //look into replacing with
-    public void getData(final Callback callback) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    callback.callback(getXml("egauge", DATA));
-                } catch (Exception e) {
-                    //should look into letting setting this to error object so widget can properly handle UI
-                    callback.callback(e.getMessage());
-                }
-            }
-        }, "GetDataThread").start();
+
+    public void getCurrentBill(int dataa) throws ExecutionException, InterruptedException
+    {
+        HashMap data = new HashMap<>();
+        data.put("n", 30);
+        data.put("D", null);
+        URL egauge = buildUrl("egauge",data);
+        EGaugeResponse hd = new EGaugeApiHistoricalData().execute(egauge).get();
     }
 
-    private Object getXml(String target, Map<String, String> params) throws Exception {
+
+    public EGaugeResponse getData() throws ExecutionException, InterruptedException {
+
+        HashMap data = new HashMap<>();
+        data.put("inst", null);
+        data.put("v1", null);
+        URL egauge = buildUrl("egauge",data);
+        return new EGaugeApiHistoricalData().execute(new URL[]{egauge}).get();
+    }
+
+
+    private URL buildUrl(String target,  Map<String, String> params) {
         StringBuilder url = new StringBuilder(urlBase).append(target);
         String appender = "?";
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -71,22 +75,13 @@ public class EgaugeApiService {
             }
             appender = "&";
         }
-
-        // removed old http client due to deprecation; using google recommended HttpURLconnection
-        // Really wish we could get ssl on the data too...
-        URL egauge = new URL(url.toString());
-        Log.d(LOG_TAG, "GET: " + url.toString());
-        HttpURLConnection egaugeConnection = (HttpURLConnection) egauge.openConnection();
-        egaugeConnection.setConnectTimeout(5000);
-        egaugeConnection.setReadTimeout(5000);
-        egaugeConnection.setRequestMethod("GET");
-        Serializer serializer = new Persister();
-        InputStream in = new BufferedInputStream(egaugeConnection.getInputStream());
-        EGaugeResponse result = new EGaugeResponse();
-        result = serializer.read(EGaugeResponse.class, in);
-        in.close();
-        egaugeConnection.disconnect();
-        return result;
+        try {
+            return new URL(url.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        //TODO: Fix
+        return null;
     }
 
     private void setUrlBase(String urlBase) {

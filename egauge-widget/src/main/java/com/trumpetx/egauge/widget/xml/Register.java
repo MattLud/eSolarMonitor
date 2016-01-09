@@ -45,6 +45,9 @@ public class Register {
     @Element(name = "v")
     private long value;
 
+    @Element(name= "c", required = false)
+    private long regValue;
+
     @Element(name = "i", required = false)
     private long rateOfChange;
 

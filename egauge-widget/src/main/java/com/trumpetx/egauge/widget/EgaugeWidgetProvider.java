@@ -67,6 +67,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.refresh_button, View.GONE);
         }
 
+
+
         if (enableSync) {
             for (final int appWidgetId : appWidgetIds) {
                 Log.i(LOG_TAG, "Updating eGauge widgets " + appWidgetId);
@@ -86,11 +88,15 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                                 views.setTextViewText(R.id.displayLabel, (String) object);
                             } else if (object instanceof EGaugeResponse) {
                                 Map<String, Register> registerNames = new HashMap<>();
+                                //TODO: look into moving this into a different logic - we just want deltas, not register logic
+                                //Filter out non-grid or non-solar(don't use if it has '+' at the end.) and has POWER cname type(see egauge api sheet and register types)
                                 for (Register register : ((EGaugeResponse) object).getRegisters()) {
                                     if (POWER.equals(register.getType()) && !register.getName().endsWith("+")) {
                                         registerNames.put(register.getName(), register);
                                     }
                                 }
+
+                                //Over write the matching names, if had a plus, then use that register to overwrite teh previous one. (todo:show example!)
                                 for (Register register : ((EGaugeResponse) object).getRegisters()) {
                                     if (POWER.equals(register.getType()) && register.getName().endsWith("+")) {
                                         String nonPlusName = register.getName().substring(0, register.getName().length() - 1);
@@ -158,6 +164,12 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         disableWidget(context);
     }
 
+    private void rotateDisplay(Context context)
+    {
+
+
+    }
+
 
     private void enableWidget(Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
@@ -195,14 +207,19 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         Log.d(LOG_TAG, "Received intent " + intent);
+        ComponentName thisAppWidget = new ComponentName(context.getPackageName(), getClass().getName());
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        int ids[] = appWidgetManager.getAppWidgetIds(thisAppWidget);
         if (EgaugeIntents.EGAUGE_WIDGET_UPDATE.equals(intent.getAction())) {
-            ComponentName thisAppWidget = new ComponentName(context.getPackageName(), getClass().getName());
-            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            int ids[] = appWidgetManager.getAppWidgetIds(thisAppWidget);
+
             onUpdate(context, appWidgetManager, ids);
         } else if ("eGaugePreferencesUpdated".equals(intent.getAction())) {
             disableWidget(context);
             enableWidget(context);
+        } else if ("egaugeRotateDisplay".equals(intent.getAction()))
+        {
+
+            onUpdate(context, appWidgetManager, ids);
         }
     }
 }
