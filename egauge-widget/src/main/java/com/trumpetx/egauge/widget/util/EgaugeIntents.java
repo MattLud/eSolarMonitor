@@ -29,10 +29,4 @@ public class EgaugeIntents {
         return pendingIntent;
     }
 
-    public  static PendingIntent RotateDisplay(Context context)
-    {
-        Intent intent = new Intent(EGAUGE_WIDGET_UPDATE);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        return pendingIntent;
-    }
 }

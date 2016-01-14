@@ -1,6 +1,7 @@
 package com.trumpetx.egauge.widget;
 
 import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
@@ -27,11 +28,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String LOG_TAG = "eGaugeWidget";
     private static final String POWER = "P";
     private DateFormat df = new SimpleDateFormat("hh:mma");
+    private static final String rotateCick = "rotateCick";
+
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -59,7 +63,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         } else {
             views.setViewVisibility(R.id.settings_button, View.GONE);
         }
-
+        views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, rotateCick));
         if (showRefresh) {
             views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
             views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
@@ -73,78 +77,79 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             for (final int appWidgetId : appWidgetIds) {
                 Log.i(LOG_TAG, "Updating eGauge widgets " + appWidgetId);
                 try {
-
                     //Note - look into replacing with asynctask
-                    EgaugeApiService.getInstance(context).getData(new Callback() {
-                        @Override
-                        public void callback(Object object) {
-                            if (showTime) {
-                                views.setTextViewText(R.id.updatedLabel, df.format(new Date()));
-                                views.setViewVisibility(R.id.updatedLabel, View.VISIBLE);
-                            } else {
-                                views.setViewVisibility(R.id.updatedLabel, View.GONE);
+                    EgaugeApiService apiService = EgaugeApiService.getInstance(context);
+                    Object object = apiService.getData();
+
+                    if (showTime) {
+                        views.setTextViewText(R.id.updatedLabel, df.format(new Date()));
+                        views.setViewVisibility(R.id.updatedLabel, View.VISIBLE);
+                    } else {
+                        views.setViewVisibility(R.id.updatedLabel, View.GONE);
+                    }
+                    if (object instanceof String) {
+                        views.setTextViewText(R.id.displayLabel, (String) object);
+                    } else if (object instanceof EGaugeResponse) {
+                        Map<String, Register> registerNames = new HashMap<>();
+
+                        //Filter out non-grid or non-solar(don't use if it has '+' at the end.) and has POWER cname type(see egauge api sheet and register types)
+                        for (Register register : ((EGaugeResponse) object).getRegisters()) {
+                            if (POWER.equals(register.getType()) && !register.getName().endsWith("+")) {
+                                registerNames.put(register.getName(), register);
                             }
-                            if (object instanceof String) {
-                                views.setTextViewText(R.id.displayLabel, (String) object);
-                            } else if (object instanceof EGaugeResponse) {
-                                Map<String, Register> registerNames = new HashMap<>();
-                                //TODO: look into moving this into a different logic - we just want deltas, not register logic
-                                //Filter out non-grid or non-solar(don't use if it has '+' at the end.) and has POWER cname type(see egauge api sheet and register types)
-                                for (Register register : ((EGaugeResponse) object).getRegisters()) {
-                                    if (POWER.equals(register.getType()) && !register.getName().endsWith("+")) {
-                                        registerNames.put(register.getName(), register);
-                                    }
-                                }
+                        }
 
-                                //Over write the matching names, if had a plus, then use that register to overwrite teh previous one. (todo:show example!)
-                                for (Register register : ((EGaugeResponse) object).getRegisters()) {
-                                    if (POWER.equals(register.getType()) && register.getName().endsWith("+")) {
-                                        String nonPlusName = register.getName().substring(0, register.getName().length() - 1);
-                                        registerNames.put(nonPlusName, register); // Overwrite the non-positive only register (don't want to double count)
-                                    }
-                                }
-                                long gridTotal = 0;
-                                for (String registerName : gridRegisters) {
-                                    if (registerNames.containsKey(registerName)) {
-                                        gridTotal += registerNames.get(registerName).getRateOfChange();
-                                    }
-                                }
+                        //Over write the matching names, if had a plus, then use that register to overwrite teh previous one. (todo:show example!)
+                        for (Register register : ((EGaugeResponse) object).getRegisters()) {
+                            if (POWER.equals(register.getType()) && register.getName().endsWith("+")) {
+                                String nonPlusName = register.getName().substring(0, register.getName().length() - 1);
+                                registerNames.put(nonPlusName, register); // Overwrite the non-positive only register (don't want to double count)
+                            }
+                        }
+                        long gridTotal = 0;
+                        for (String registerName : gridRegisters) {
+                            if (registerNames.containsKey(registerName)) {
+                                gridTotal += registerNames.get(registerName).getRateOfChange();
+                            }
+                        }
 
-                                long generationTotal = 0;
-                                for (String registerName : solarRegisters) {
-                                    if (registerNames.containsKey(registerName)) {
-                                        long rateOfChange = registerNames.get(registerName).getRateOfChange();
-                                        // This is probably already the case (the + sign register); however, just in case...
-                                        if (rateOfChange > 0) {
-                                            generationTotal += rateOfChange;
-                                        }
-                                    }
+                        long generationTotal = 0;
+                        for (String registerName : solarRegisters) {
+                            if (registerNames.containsKey(registerName)) {
+                                long rateOfChange = registerNames.get(registerName).getRateOfChange();
+                                // This is probably already the case (the + sign register); however, just in case...
+                                if (rateOfChange > 0) {
+                                    generationTotal += rateOfChange;
                                 }
+                            }
+                        }
 
-                                long usageTotal = gridTotal + generationTotal;
+                        long usageTotal = gridTotal + generationTotal;
 
-                                long displayValue;
-                                switch (displayPreference) {
-                                    case "usage":
-                                        displayValue = usageTotal * -1;
-                                        break;
-                                    case "production":
-                                        displayValue = generationTotal;
-                                        break;
-                                    case "net_usage":
-                                    default:
-                                        displayValue = gridTotal * -1;
-                                }
+                        long displayValue;
+                        switch (displayPreference) {
+                            case "usage":
+                                displayValue = usageTotal * -1;
+                                break;
+                            case "production":
+                                displayValue = generationTotal;
+                                break;
+                            case "net_usage":
+                            default:
+                                displayValue = gridTotal * -1;
+                        }
 
-                                views.setTextViewText(R.id.displayLabel, displayValue + " " + Register.REGISTER_TYPE_LABELS.get(POWER));
-                                views.setTextColor(R.id.displayLabel, (displayValue > 0) ? Color.GREEN : Color.RED);
+                        views.setTextViewText(R.id.displayLabel, displayValue + " " + Register.REGISTER_TYPE_LABELS.get(POWER));
+                        views.setTextColor(R.id.displayLabel, (displayValue > 0) ? Color.GREEN : Color.RED);
 
                             }
                             appWidgetManager.updateAppWidget(appWidgetId, views);
-                        }
-                    });
                 } catch (NotConfiguredException nce) {
                     Toast.makeText(context, nce.getMessage(), Toast.LENGTH_SHORT);
+                } catch (InterruptedException e) {
+                    Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT);
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
                 }
             }
         } else {
@@ -164,10 +169,25 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         disableWidget(context);
     }
 
-    private void rotateDisplay(Context context)
+    private void rotateDisplay(Context context, Intent intent)
     {
+        //widget id is tacked onto end of action
+        String id = intent.getAction();
+        //int widgetId = Integer.parseInt(intent.getAction().substring(rotateCick.length()));
 
+        //TODO: push this up to parent action
+        AppWidgetManager appWidgetManager =  AppWidgetManager.getInstance(context);
+        appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class));
+        for(int ids :appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class))) {
 
+            Log.i(LOG_TAG, "Rotating display on widget " + id);
+            final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+            //Set 'em here
+            views.setTextViewText(R.id.lbl_display, "test!");
+            views.setTextViewText(R.id.displayLabel, "test!");
+
+            appWidgetManager.getInstance(context).updateAppWidget(ids, views);
+        }
     }
 
 
@@ -203,6 +223,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         disableWidget(context);
     }
 
+
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
@@ -216,10 +237,18 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         } else if ("eGaugePreferencesUpdated".equals(intent.getAction())) {
             disableWidget(context);
             enableWidget(context);
-        } else if ("egaugeRotateDisplay".equals(intent.getAction()))
+        } else if (rotateCick.equals(intent.getAction()))
         {
-
-            onUpdate(context, appWidgetManager, ids);
+            rotateDisplay(context, intent);
         }
     }
+
+    protected PendingIntent getPengingSelfIntent(Context ctx, String action)
+    {
+            Intent intent = new Intent(ctx, getClass());
+            intent.setAction(action);
+            return PendingIntent.getBroadcast(ctx, 0, intent, 0);
+    }
+
+
 }
