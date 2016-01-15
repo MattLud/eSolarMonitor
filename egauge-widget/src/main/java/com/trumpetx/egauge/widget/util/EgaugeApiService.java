@@ -5,12 +5,7 @@ import android.util.Log;
 import com.trumpetx.egauge.widget.NotConfiguredException;
 import com.trumpetx.egauge.widget.util.tasks.EGaugeApiHistoricalData;
 import com.trumpetx.egauge.widget.xml.EGaugeResponse;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 

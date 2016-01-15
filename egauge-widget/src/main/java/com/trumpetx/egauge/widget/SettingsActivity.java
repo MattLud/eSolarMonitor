@@ -182,6 +182,7 @@ public class SettingsActivity extends PreferenceActivity implements PreferenceBi
         bindPreferenceSummaryToValue(o.findPreference("grid_register_text"));
         bindPreferenceSummaryToValue(o.findPreference("sync_frequency_list"));
         bindPreferenceSummaryToValue(o.findPreference("display_option_list"));
+        bindPreferenceSummaryToValue(o.findPreference("display_option_list"));
     }
 
 }
