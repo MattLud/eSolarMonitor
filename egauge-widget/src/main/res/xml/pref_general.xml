@@ -82,4 +82,20 @@
         android:summary="@string/pref_desc_show_refresh"
         android:defaultValue="true" />
 
+    <CheckBoxPreference
+        android:key="enable_bill_calculate"
+        android:title="@string/pref_title_enable_bill"
+        android:summary="@string/pref_desc_enable_bill"
+        android:defaultValue="true" />
+
+    <CheckBoxPreference
+        android:key="inside_city_of_austin"
+        android:title="@string/pref_title_inside_city"
+        android:summary="@string/pref_desc_inside_city"
+        android:defaultValue="true" />
+
+
+
+
+
 </PreferenceScreen>

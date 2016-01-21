@@ -15,6 +15,12 @@
     <string name="pref_title_show_refresh">Show Refresh Button</string>
     <string name="pref_desc_show_refresh">Display refresh button on widget</string>
 
+    <string name="pref_title_enable_bill">Perform Austin Energy Bill Calculation</string>
+    <string name="pref_desc_enable_bill">Disable this if the bill amounts are incorrect</string>
+
+    <string name="pref_title_inside_city">Billing Location Inside City of Austin</string>
+    <string name="pref_desc_inside_city">Determines what tier to use for billing and alerts </string>
+
     <string name="pref_title_mon_name">Device Name</string>
     <string name="pref_default_mon_name">eGauge####</string>
 
@@ -55,5 +61,6 @@
         <item>net_usage</item>
         <item>production</item>
         <item>usage</item>
+        <item>bill</item>
     </string-array>
 </resources>

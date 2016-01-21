@@ -1,9 +1,11 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.7.+'
+        classpath 'com.android.tools.build:gradle:1.5.0'
+
     }
 }
 apply plugin: 'android'
@@ -13,18 +15,18 @@ repositories {
 }
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "19.0.0"
+    compileSdkVersion 22
+    buildToolsVersion '22.0.0'
 
     defaultConfig {
         minSdkVersion 7
-        targetSdkVersion 19
+        targetSdkVersion 22
         versionCode 1
         versionName "0.1"
     }
     signingConfigs {
         release {
-            storeFile file("E:\\Dropbox\\esolarmonitor.keystore")
+            storeFile file("debug.keystore")
             storePassword ""
             keyAlias "mykey"
             keyPassword ""
@@ -42,25 +44,25 @@ android {
     }
     buildTypes {
         release {
-            runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+
             signingConfig signingConfigs.release
         }
         debug {
-            runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             signingConfig signingConfigs.debug
         }
     }
 }
 
+
+
 dependencies {
-    compile 'com.android.support:appcompat-v7:+'
-    compile 'com.android.support:support-v4:19.0.0'
+    compile 'com.android.support:appcompat-v7:22.0.0'
+    compile 'com.android.support:support-v4:22.0.0'
     compile('org.simpleframework:simple-xml:2.7.+') {
         exclude module: 'stax'
         exclude module: 'stax-api'
         exclude module: 'xpp3'
     }
     compile 'com.google.guava:guava:15.0'
+    testCompile 'junit:junit:4.12'
 }

@@ -52,6 +52,25 @@ public class SettingsActivity extends PreferenceActivity implements PreferenceBi
     }
 
     @Override
+    public void onPause()
+    {
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        int widgetId = extras == null ? AppWidgetManager.INVALID_APPWIDGET_ID : extras.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+
+        // this is the intent broadcast/returned to the widget
+        Intent updateIntent = new Intent(SettingsActivity.this, EgaugeWidgetProvider.class);
+        updateIntent.setAction("eGaugePreferencesUpdated");
+        updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
+        sendBroadcast(updateIntent);
+        Toast.makeText(this, R.string.settings_updated, Toast.LENGTH_SHORT).show();
+        super.onPause();
+    }
+
+
+
+
+    @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
 
@@ -162,6 +181,7 @@ public class SettingsActivity extends PreferenceActivity implements PreferenceBi
         bindPreferenceSummaryToValue(o.findPreference("solar_register_text"));
         bindPreferenceSummaryToValue(o.findPreference("grid_register_text"));
         bindPreferenceSummaryToValue(o.findPreference("sync_frequency_list"));
+        bindPreferenceSummaryToValue(o.findPreference("display_option_list"));
         bindPreferenceSummaryToValue(o.findPreference("display_option_list"));
     }
 
