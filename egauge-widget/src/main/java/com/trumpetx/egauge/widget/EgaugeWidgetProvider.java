@@ -25,6 +25,7 @@ import com.trumpetx.egauge.widget.xml.Register;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String POWER = "P";
     private DateFormat df = new SimpleDateFormat("hh:mma");
     private static final String rotateCick = "rotateCick";
-
+    private static final String [] rotateList = new String [] {"usage","production", "net_usage"};//, "bill"};
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -48,6 +49,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, final AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
         final boolean enableSync = preferences.getBoolean("enable_sync_checkbox", false) && NetworkConnection.hasNetworkConnection(context);
         //Add multiple fields in the future, one for solar payback/net meter/tier setup/auto config provider...etc. Likely will need it's own thing
         final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
@@ -56,9 +58,9 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         final boolean showTime = preferences.getBoolean("show_time_checkbox", true);
         final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
         final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
-        final String[] gridRegisters = preferences.getString("egauge_grid_register_text", "Grid").trim().split("\\s*,\\s*");
-        final String[] solarRegisters = preferences.getString("egauge_solar_register_text", "Solar").trim().split("\\s*,\\s*");
         final String displayPreference = preferences.getString("display_option_list", "net_usage");
+
+
 
 
 
@@ -84,7 +86,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             for (final int appWidgetId : appWidgetIds) {
                 Log.i(LOG_TAG, "Updating eGauge widgets " + appWidgetId);
                 try {
-                    //Note - look into replacing with asynctask
+
                     EgaugeApiService apiService = EgaugeApiService.getInstance(context);
                     Object object = apiService.getData();
 
@@ -98,14 +100,15 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                         views.setTextViewText(R.id.displayLabel, (String) object);
                     } else if (object instanceof EGaugeResponse) {
 
-                        SetDisplay(displayPreference);
+                        long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
+                        String[] displayValue = SetDisplay(displayPreference, powerValues);
 
-                        views.setTextViewText(R.id.lbl_display, label);
-                        views.setTextViewText(R.id.displayLabel, displayValue + " " + Register.REGISTER_TYPE_LABELS.get(POWER));
-                        views.setTextColor(R.id.displayLabel, (displayValue > 0) ? Color.GREEN : Color.RED);
+                        views.setTextViewText(R.id.lbl_display, displayValue[0]);
+                        views.setTextViewText(R.id.displayLabel, displayValue[1] + " " + Register.REGISTER_TYPE_LABELS.get(POWER));
+                        views.setTextColor(R.id.displayLabel, (Long.parseLong(displayValue[1]) > 0) ? Color.GREEN : Color.RED);
 
-                            }
-                            appWidgetManager.updateAppWidget(appWidgetId, views);
+                    }
+                    appWidgetManager.updateAppWidget(appWidgetId, views);
                 } catch (NotConfiguredException nce) {
                     Toast.makeText(context, nce.getMessage(), Toast.LENGTH_SHORT);
                 } catch (InterruptedException e) {
@@ -131,26 +134,71 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         disableWidget(context);
     }
 
-    private AbstractMap.SimpleEntry<String,String> SetDisplay(String displayPreference, EGaugeResponse object)
+    public void GetFromCache()
     {
-        AbstractMap.SimpleEntry entry;
+        
+    }
+
+    public void SaveDataToCache()
+    {
+
+    }
+
+
+    private String[] SetDisplay(String displayPreference, long[] powerValues)
+    {
+        long gridTotal = powerValues[0];
+        long generationTotal = powerValues[1];
+
+        long usageTotal = gridTotal + generationTotal;
+
+        long displayValue;
+        String label = "";
+        //TODO: stick this in cache for rotate to use
+        switch (displayPreference) {
+            case "usage":
+                //move to strings
+                label = "House Use";
+                displayValue = usageTotal * -1;
+                //= new AbstractMap.SimpleEntry<String,String>("House Use", );
+                break;
+            case "production":
+                //Panel output
+                label = "Solar Prod";
+                displayValue = generationTotal;
+                break;
+            case "net_usage":
+            default:
+                displayValue = gridTotal * -1;
+                label = "Net Usage";
+        }
+
+        return new String[]{label, displayValue+""};
+
+    }
+
+    private long[]GetProperRegisters(SharedPreferences preferences, EGaugeResponse response)
+    {
 
         Map<String, Register> registerNames = new HashMap<>();
+        final String[] gridRegisters = preferences.getString("egauge_grid_register_text", "Grid").trim().split("\\s*,\\s*");
+        final String[] solarRegisters = preferences.getString("egauge_solar_register_text", "Solar").trim().split("\\s*,\\s*");
 
         //Filter out non-grid or non-solar(don't use if it has '+' at the end.) and has POWER cname type(see egauge api sheet and register types)
-        for (Register register : ((EGaugeResponse) object).getRegisters()) {
+        for (Register register : response.getRegisters()) {
             if (POWER.equals(register.getType()) && !register.getName().endsWith("+")) {
                 registerNames.put(register.getName(), register);
             }
         }
 
-        //Over write the matching names, if had a plus, then use that register to overwrite teh previous one. (todo:show example!)
-        for (Register register : ((EGaugeResponse) object).getRegisters()) {
+        //Over write the matching names, if had a plus, then use that register to overwrite the previous one. (todo:show example!)
+        for (Register register : response.getRegisters()) {
             if (POWER.equals(register.getType()) && register.getName().endsWith("+")) {
                 String nonPlusName = register.getName().substring(0, register.getName().length() - 1);
                 registerNames.put(nonPlusName, register); // Overwrite the non-positive only register (don't want to double count)
             }
         }
+
         long gridTotal = 0;
         for (String registerName : gridRegisters) {
             if (registerNames.containsKey(registerName)) {
@@ -169,75 +217,37 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             }
         }
 
-        long usageTotal = gridTotal + generationTotal;
-
-        long displayValue;
-        String label = "";
-        //TODO: stick this in cache for rotate to use
-
-        switch (displayPreference) {
-            case "usage":
-                //move to strings
-                label = "House Use";
-                displayValue = usageTotal * -1;
-                break;
-            case "production":
-                //Panel output
-                label = "Solar Prod";
-                displayValue = generationTotal;
-                break;
-            case "net_usage":
-            default:
-                displayValue = gridTotal * -1;
-                label = "Net Usage";
-        }
-
-        switch (displayPreference) {
-            case "usage":
-                //move to strings
-                label = "House Use";
-                displayValue = usageTotal * -1;
-                = new AbstractMap.SimpleEntry<String,String>("House Use", );
-                break;
-            case "production":
-                //Panel output
-                label = "Solar Prod";
-                displayValue = generationTotal;
-                break;
-            case "net_usage":
-            default:
-                displayValue = gridTotal * -1;
-                label = "Net Usage";
-        }
+        return new long[]{gridTotal, generationTotal};
     }
 
-    private void rotateDisplay(Context context, Intent intent)
-    {
+
+    private void rotateDisplay(Context context, Intent intent){
         //widget id is tacked onto end of action
         String id = intent.getAction();
         //int widgetId = Integer.parseInt(intent.getAction().substring(rotateCick.length()));
 
-        String [] rotateList = new String [] {"usage","production", "net usage", "bill"};
+
 
         //TODO: push this up to parent action
         AppWidgetManager appWidgetManager =  AppWidgetManager.getInstance(context);
         appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class));
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-
         final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
         final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
-
-
-        for(int ids :appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class))) {
-
-            Log.i(LOG_TAG, "Rotating display on widget " + id);
-            final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-            //Set 'em here
-            views.setTextViewText(R.id.lbl_display, enableBillCalculate+"");
-            views.setTextViewText(R.id.displayLabel, insideCityOfAustin+"");
-
-            appWidgetManager.getInstance(context).updateAppWidget(ids, views);
+        String displayPreference = preferences.getString("display_option_list", "net_usage");
+        int index = Arrays.asList(rotateList).indexOf(displayPreference)+1;
+        if(index>=rotateList.length)
+        {
+            index = 0;
         }
+        Log.i(LOG_TAG, "Rotating display on widgets");
+        String displayPref = rotateList[index];
+        //save our new preference
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("display_option_list",displayPref);
+        editor.commit();
+
+        onUpdate(context, appWidgetManager,appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class)) );
     }
 
 

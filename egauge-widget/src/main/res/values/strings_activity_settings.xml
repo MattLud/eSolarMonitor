@@ -61,5 +61,6 @@
         <item>net_usage</item>
         <item>production</item>
         <item>usage</item>
+        <item>bill</item>
     </string-array>
 </resources>
