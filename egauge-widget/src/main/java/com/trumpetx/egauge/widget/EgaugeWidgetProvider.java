@@ -60,11 +60,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
         final String displayPreference = preferences.getString("display_option_list", "net_usage");
 
-
-
-
-
-
+        Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
         if (showSettings) {
             views.setViewVisibility(R.id.settings_button, View.VISIBLE);
@@ -81,41 +77,38 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         }
 
 
-
+        //change this to something better
+        Object object = "Error working";
         if (enableSync) {
-            for (final int appWidgetId : appWidgetIds) {
-                Log.i(LOG_TAG, "Updating eGauge widgets " + appWidgetId);
-                try {
+            try {
+                EgaugeApiService apiService = EgaugeApiService.getInstance(context);
+                object = apiService.getData();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (NotConfiguredException e) {
+                e.printStackTrace();
+            }
 
-                    EgaugeApiService apiService = EgaugeApiService.getInstance(context);
-                    Object object = apiService.getData();
+            if (showTime) {
+                views.setTextViewText(R.id.updatedLabel, df.format(new Date()));
+                views.setViewVisibility(R.id.updatedLabel, View.VISIBLE);
+            } else {
+                views.setViewVisibility(R.id.updatedLabel, View.GONE);
+            }
+            if (object instanceof String) {
+                views.setTextViewText(R.id.displayLabel, (String) object);
+            } else if (object instanceof EGaugeResponse) {
 
-                    if (showTime) {
-                        views.setTextViewText(R.id.updatedLabel, df.format(new Date()));
-                        views.setViewVisibility(R.id.updatedLabel, View.VISIBLE);
-                    } else {
-                        views.setViewVisibility(R.id.updatedLabel, View.GONE);
-                    }
-                    if (object instanceof String) {
-                        views.setTextViewText(R.id.displayLabel, (String) object);
-                    } else if (object instanceof EGaugeResponse) {
-
-                        long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
-                        String[] displayValue = SetDisplay(displayPreference, powerValues);
-
-                        views.setTextViewText(R.id.lbl_display, displayValue[0]);
-                        views.setTextViewText(R.id.displayLabel, displayValue[1] + " " + Register.REGISTER_TYPE_LABELS.get(POWER));
-                        views.setTextColor(R.id.displayLabel, (Long.parseLong(displayValue[1]) > 0) ? Color.GREEN : Color.RED);
-
-                    }
-                    appWidgetManager.updateAppWidget(appWidgetId, views);
-                } catch (NotConfiguredException nce) {
-                    Toast.makeText(context, nce.getMessage(), Toast.LENGTH_SHORT);
-                } catch (InterruptedException e) {
-                    Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT);
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
+                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
+                //cache our new values here.
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putLong(rotateList[0], powerValues[0]);
+                editor.putLong(rotateList[1], powerValues[1]);
+                editor.commit();
+                String[] displayValue = SetDisplay(displayPreference, powerValues);
+                DrawUpdate(views, displayValue, appWidgetIds, appWidgetManager);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -134,16 +127,17 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         disableWidget(context);
     }
 
-    public void GetFromCache()
+
+    private void DrawUpdate(RemoteViews views, String[] displayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager )
     {
-        
+        for (final int appWidgetId : appWidgetIds) {
+
+            views.setTextViewText(R.id.lbl_display, displayValue[0]);
+            views.setTextViewText(R.id.displayLabel, displayValue[1] + "" + Register.REGISTER_TYPE_LABELS.get(POWER));
+            views.setTextColor(R.id.displayLabel, (Long.parseLong(displayValue[1]) > 0) ? Color.GREEN : Color.RED);
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+        }
     }
-
-    public void SaveDataToCache()
-    {
-
-    }
-
 
     private String[] SetDisplay(String displayPreference, long[] powerValues)
     {
@@ -154,6 +148,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         long displayValue;
         String label = "";
+
+        Log.i(LOG_TAG, "Matching following display " + displayPreference );
         //TODO: stick this in cache for rotate to use
         switch (displayPreference) {
             case "usage":
@@ -179,7 +175,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
     private long[]GetProperRegisters(SharedPreferences preferences, EGaugeResponse response)
     {
-
         Map<String, Register> registerNames = new HashMap<>();
         final String[] gridRegisters = preferences.getString("egauge_grid_register_text", "Grid").trim().split("\\s*,\\s*");
         final String[] solarRegisters = preferences.getString("egauge_solar_register_text", "Solar").trim().split("\\s*,\\s*");
@@ -230,7 +225,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         //TODO: push this up to parent action
         AppWidgetManager appWidgetManager =  AppWidgetManager.getInstance(context);
-        appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class));
+        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class));
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
         final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
         final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
@@ -240,14 +235,16 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         {
             index = 0;
         }
-        Log.i(LOG_TAG, "Rotating display on widgets");
-        String displayPref = rotateList[index];
+        String newDisplayPref = rotateList[index];
+
+        Log.i(LOG_TAG, "Rotating display on widgets to " + newDisplayPref );
         //save our new preference
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("display_option_list",displayPref);
+        editor.putString("display_option_list",newDisplayPref);
         editor.commit();
-
-        onUpdate(context, appWidgetManager,appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class)) );
+        long[] powerValues = new long[]{preferences.getLong(rotateList[0],0),preferences.getLong(rotateList[1], 0)};
+        String[] display = SetDisplay(newDisplayPref, powerValues);
+        DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout),display, appWidgetIds, appWidgetManager);
     }
 
 

@@ -26,7 +26,7 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file("E:\\Dropbox\\esolarmonitor.keystore")
+            storeFile file("debug.keystore")
             storePassword ""
             keyAlias "mykey"
             keyPassword ""
