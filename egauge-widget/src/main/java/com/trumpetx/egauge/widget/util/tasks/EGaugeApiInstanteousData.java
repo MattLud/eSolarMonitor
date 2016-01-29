@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * Created by ludlumm on 1/8/2016.
  */
-public class EGaugeApiHistoricalData extends AsyncTask<URL, Void, EGaugeResponse> {
+public class EGaugeApiInstanteousData extends AsyncTask<URL, Void, EGaugeResponse> {
 
     public static String LOG_TAG = "API_Async";
     @Override
@@ -32,7 +32,7 @@ public class EGaugeApiHistoricalData extends AsyncTask<URL, Void, EGaugeResponse
         try {
         Log.d(LOG_TAG, "GET: " + params[0].toString());
         HttpURLConnection egaugeConnection = (HttpURLConnection) params[0].openConnection();
-        egaugeConnection.setConnectTimeout(5000);
+            egaugeConnection.setConnectTimeout(5000);
         egaugeConnection.setReadTimeout(5000);
         egaugeConnection.setRequestMethod("GET");
         Serializer serializer = new Persister();

@@ -1,4 +1,4 @@
-package com.trimpetx.egauge.tests;
+package com.trumpetx.egauge.tests;
 
 import com.trumpetx.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
 import com.trumpetx.egauge.widget.util.billcalculators.IBillCalculator;

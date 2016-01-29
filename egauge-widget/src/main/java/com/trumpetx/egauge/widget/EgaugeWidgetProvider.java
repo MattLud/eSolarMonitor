@@ -13,9 +13,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
-import android.widget.Toast;
 
-import com.trumpetx.egauge.widget.util.Callback;
 import com.trumpetx.egauge.widget.util.EgaugeApiService;
 import com.trumpetx.egauge.widget.util.EgaugeIntents;
 import com.trumpetx.egauge.widget.util.NetworkConnection;
@@ -24,7 +22,6 @@ import com.trumpetx.egauge.widget.xml.Register;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -36,8 +33,11 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String LOG_TAG = "eGaugeWidget";
     private static final String POWER = "P";
     private DateFormat df = new SimpleDateFormat("hh:mma");
-    private static final String rotateCick = "rotateCick";
-    private static final String [] rotateList = new String [] {"usage","production", "net_usage"};//, "bill"};
+    private static final String ROTATE_RIGHT_DISPLAY = "ROTATE_RIGHT_DISPLAY";
+    private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
+
+    private static final String [] rotateRightList = new String [] {"usage","production", "net_usage"};//, "bill"};
+    private static final String [] rotateLeftList = new String [] {"refreshTime","monthlyUsage", "currentBill",};//, "bill"};
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -68,7 +68,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         } else {
             views.setViewVisibility(R.id.settings_button, View.GONE);
         }
-        views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, rotateCick));
+        views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
         if (showRefresh) {
             views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
             views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
@@ -79,10 +79,17 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         //change this to something better
         Object object = "Error working";
+        Object leftObject = "Error working";
+
         if (enableSync) {
             try {
                 EgaugeApiService apiService = EgaugeApiService.getInstance(context);
+                //get snapshot of usage
                 object = apiService.getData();
+                //get last bill total
+                //hard coded to 16
+                leftObject = apiService.getCurrentBill(16);
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
@@ -91,12 +98,16 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 e.printStackTrace();
             }
 
+            //About to be replaced with carousel
             if (showTime) {
                 views.setTextViewText(R.id.updatedLabel, df.format(new Date()));
                 views.setViewVisibility(R.id.updatedLabel, View.VISIBLE);
             } else {
                 views.setViewVisibility(R.id.updatedLabel, View.GONE);
             }
+
+
+
             if (object instanceof String) {
                 views.setTextViewText(R.id.displayLabel, (String) object);
             } else if (object instanceof EGaugeResponse) {
@@ -104,8 +115,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
                 //cache our new values here.
                 SharedPreferences.Editor editor = preferences.edit();
-                editor.putLong(rotateList[0], powerValues[0]);
-                editor.putLong(rotateList[1], powerValues[1]);
+                editor.putLong(rotateRightList[0], powerValues[0]);
+                editor.putLong(rotateRightList[1], powerValues[1]);
                 editor.commit();
                 String[] displayValue = SetDisplay(displayPreference, powerValues);
                 DrawUpdate(views, displayValue, appWidgetIds, appWidgetManager);
@@ -216,33 +227,39 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     }
 
 
-    private void rotateDisplay(Context context, Intent intent){
+    private void rotateDisplay(Context context, Intent intent, String leftOrRight){
         //widget id is tacked onto end of action
         String id = intent.getAction();
-        //int widgetId = Integer.parseInt(intent.getAction().substring(rotateCick.length()));
-
-
-
-        //TODO: push this up to parent action
         AppWidgetManager appWidgetManager =  AppWidgetManager.getInstance(context);
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class));
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
         final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
         final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
-        String displayPreference = preferences.getString("display_option_list", "net_usage");
-        int index = Arrays.asList(rotateList).indexOf(displayPreference)+1;
-        if(index>=rotateList.length)
+        String displayPreference;
+        //int widgetId = Integer.parseInt(intent.getAction().substring(ROTATE_RIGHT_DISPLAY.length()));
+        if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
+
+            displayPreference = preferences.getString("display_option_list", "net_usage");
+        }
+        //left rotate
+        else{
+            displayPreference = preferences.getString("display_option_list", "net_usage");
+        }
+
+        int index = Arrays.asList(rotateRightList).indexOf(displayPreference)+1;
+        if(index>= rotateRightList.length)
         {
             index = 0;
         }
-        String newDisplayPref = rotateList[index];
+        String newDisplayPref = rotateRightList[index];
 
-        Log.i(LOG_TAG, "Rotating display on widgets to " + newDisplayPref );
+        Log.i(LOG_TAG, "Rotating display on widgets to " + newDisplayPref);
         //save our new preference
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString("display_option_list",newDisplayPref);
         editor.commit();
-        long[] powerValues = new long[]{preferences.getLong(rotateList[0],0),preferences.getLong(rotateList[1], 0)};
+        long[] powerValues = new long[]{preferences.getLong(rotateRightList[0],0),preferences.getLong(rotateRightList[1], 0)};
         String[] display = SetDisplay(newDisplayPref, powerValues);
         DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout),display, appWidgetIds, appWidgetManager);
     }
@@ -294,10 +311,14 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         } else if ("eGaugePreferencesUpdated".equals(intent.getAction())) {
             disableWidget(context);
             enableWidget(context);
-        } else if (rotateCick.equals(intent.getAction()))
+        } else if (ROTATE_RIGHT_DISPLAY.equals(intent.getAction()))
         {
-            rotateDisplay(context, intent);
+            rotateDisplay(context, intent, ROTATE_RIGHT_DISPLAY);
+        } else if (ROTATE_LEFT_DISPLAY.equals(intent.getAction()))
+        {
+            rotateDisplay(context, intent, ROTATE_LEFT_DISPLAY);
         }
+
     }
 
     protected PendingIntent getPengingSelfIntent(Context ctx, String action)
