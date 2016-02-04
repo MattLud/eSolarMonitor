@@ -99,7 +99,7 @@ public class AustinEnergyBillCalculator implements IBillCalculator{
         }
 
         BigDecimal solarCredit = bdKwhSolarProduced.multiply(solarPayback);
-        return bill.add(energyUtilization).subtract(solarCredit);
+        return bill.add(energyUtilization).subtract(solarCredit).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 
 

@@ -3,6 +3,8 @@ package com.trumpetx.egauge.widget.xml.storeddata;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
+import java.util.List;
+
 /**
  <r>
      <c>444410825</c>
@@ -13,16 +15,16 @@ import org.simpleframework.xml.Root;
 @Root(name="r")
 public class HistoricalData {
 
-    public String getRegisterValue() {
+    public List<RegisterValue> getRegisterValue() {
         return registerValue;
     }
 
-    public void setRegisterValue(String registerValue) {
+    public void setRegisterValue(List<RegisterValue> registerValue) {
         this.registerValue = registerValue;
     }
 
-    @ElementList(name="c")
-    private String registerValue;
+    @ElementList(inline = true)
+    private List<RegisterValue> registerValue;
 
 
 

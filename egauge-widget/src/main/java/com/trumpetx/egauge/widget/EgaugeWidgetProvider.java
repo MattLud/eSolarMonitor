@@ -19,6 +19,7 @@ import com.trumpetx.egauge.widget.util.EgaugeIntents;
 import com.trumpetx.egauge.widget.util.NetworkConnection;
 import com.trumpetx.egauge.widget.xml.EGaugeResponse;
 import com.trumpetx.egauge.widget.xml.Register;
+import com.trumpetx.egauge.widget.xml.storeddata.CurrentBillInfo;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -54,11 +55,14 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         //Add multiple fields in the future, one for solar payback/net meter/tier setup/auto config provider...etc. Likely will need it's own thing
         final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
         final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
+        final int billTurnOverDate = preferences.getInt("bill_turn_over_date", 16);
+
 
         final boolean showTime = preferences.getBoolean("show_time_checkbox", true);
         final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
         final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
         final String displayPreference = preferences.getString("display_option_list", "net_usage");
+        final String leftDisplayPreference = preferences.getString("left_display_option_list", "refreshTime");
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
@@ -69,6 +73,9 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.settings_button, View.GONE);
         }
         views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
+        views.setOnClickPendingIntent(R.id.lbl_display,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
+        views.setOnClickPendingIntent(R.id.lbl_refresh,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
+        views.setOnClickPendingIntent(R.id.updatedLabel,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
         if (showRefresh) {
             views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
             views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
@@ -80,7 +87,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         //change this to something better
         Object object = "Error working";
         Object leftObject = "Error working";
-
+        String refreshTime = df.format(new Date());
         if (enableSync) {
             try {
                 EgaugeApiService apiService = EgaugeApiService.getInstance(context);
@@ -88,7 +95,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 object = apiService.getData();
                 //get last bill total
                 //hard coded to 16
-                leftObject = apiService.getCurrentBill(16);
+                leftObject = apiService.getCurrentBill(billTurnOverDate, insideCityOfAustin);
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -98,28 +105,27 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 e.printStackTrace();
             }
 
-            //About to be replaced with carousel
-            if (showTime) {
-                views.setTextViewText(R.id.updatedLabel, df.format(new Date()));
-                views.setViewVisibility(R.id.updatedLabel, View.VISIBLE);
-            } else {
-                views.setViewVisibility(R.id.updatedLabel, View.GONE);
-            }
-
-
 
             if (object instanceof String) {
                 views.setTextViewText(R.id.displayLabel, (String) object);
             } else if (object instanceof EGaugeResponse) {
 
                 long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
+                CurrentBillInfo bill = (CurrentBillInfo) leftObject;
                 //cache our new values here.
+
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putLong(rotateRightList[0], powerValues[0]);
                 editor.putLong(rotateRightList[1], powerValues[1]);
+                editor.putString(rotateLeftList[0], refreshTime);
+                editor.putString(rotateLeftList[1], (bill.getKwhConsumed() - bill.getKwhProduced()) + "");
+                editor.putString(rotateLeftList[2], bill.getCurrentBill().toPlainString());
                 editor.commit();
-                String[] displayValue = SetDisplay(displayPreference, powerValues);
-                DrawUpdate(views, displayValue, appWidgetIds, appWidgetManager);
+
+                String[] rightDisplayValue = SetDisplay(displayPreference, powerValues);
+                String[] leftDisplayValue = SetLeftDisplay(leftDisplayPreference, refreshTime,(bill.getKwhConsumed() - bill.getKwhProduced()) + "",bill.getCurrentBill().toPlainString() );
+                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager);
+                DrawLeftUpdate(views, leftDisplayValue, appWidgetIds, appWidgetManager);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -139,16 +145,29 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     }
 
 
-    private void DrawUpdate(RemoteViews views, String[] displayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager )
-    {
+    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager ) {
         for (final int appWidgetId : appWidgetIds) {
 
-            views.setTextViewText(R.id.lbl_display, displayValue[0]);
-            views.setTextViewText(R.id.displayLabel, displayValue[1] + "" + Register.REGISTER_TYPE_LABELS.get(POWER));
-            views.setTextColor(R.id.displayLabel, (Long.parseLong(displayValue[1]) > 0) ? Color.GREEN : Color.RED);
+            views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
+            views.setTextViewText(R.id.displayLabel, rightDisplayValue[1] + "" + Register.REGISTER_TYPE_LABELS.get(POWER));
+            views.setTextColor(R.id.displayLabel, (Long.parseLong(rightDisplayValue[1]) > 0) ? Color.GREEN : Color.RED);
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
+
+
+    private void DrawLeftUpdate(RemoteViews views,  String[] leftDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager )
+    {
+        for (final int appWidgetId : appWidgetIds) {
+
+
+            views.setTextViewText(R.id.lbl_refresh, leftDisplayValue[0]);
+            views.setTextViewText(R.id.updatedLabel, leftDisplayValue[1]);
+            //views.setTextColor(R.id.updatedLabel, (Long.parseLong(rightDisplayValue[1]) > 0) ? Color.GREEN : Color.RED);
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+        }
+    }
+
 
     private String[] SetDisplay(String displayPreference, long[] powerValues)
     {
@@ -157,31 +176,56 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         long usageTotal = gridTotal + generationTotal;
 
-        long displayValue;
+        String displayValue;
         String label = "";
 
         Log.i(LOG_TAG, "Matching following display " + displayPreference );
-        //TODO: stick this in cache for rotate to use
+        //todo: autoformat kwh to proper scale; do same for cash
+        //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
         switch (displayPreference) {
             case "usage":
                 //move to strings
-                label = "House Use";
-                displayValue = usageTotal * -1;
+                label = "Usage";
+                displayValue = (usageTotal * -1)+"";
                 //= new AbstractMap.SimpleEntry<String,String>("House Use", );
                 break;
             case "production":
                 //Panel output
                 label = "Solar Prod";
-                displayValue = generationTotal;
+                displayValue = generationTotal+"";
                 break;
+
+
             case "net_usage":
             default:
-                displayValue = gridTotal * -1;
+                displayValue = (gridTotal * -1)+"";
                 label = "Net Usage";
         }
-
         return new String[]{label, displayValue+""};
+    }
 
+    private String[] SetLeftDisplay(String displayPreference,String timeRefreshed, String kwh, String bill)
+    {
+        String displayValue;
+        String label = "";
+        switch (displayPreference) {
+
+            case "refreshTime":
+            default:
+                label = "Last Refresh";
+                displayValue = timeRefreshed;
+                break;
+            case "monthlyUsage":
+                label = "Bill usage";
+                displayValue = kwh + "kWh";
+                break;
+            case "currentBill":
+                label = "Current Bill";
+                //change out to
+                displayValue = "$" + bill;
+                break;
+        }
+        return new String[]{label, displayValue+""};
     }
 
     private long[]GetProperRegisters(SharedPreferences preferences, EGaugeResponse response)
@@ -237,31 +281,53 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
         final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
         String displayPreference;
+        String[] options;
+
         //int widgetId = Integer.parseInt(intent.getAction().substring(ROTATE_RIGHT_DISPLAY.length()));
         if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
 
             displayPreference = preferences.getString("display_option_list", "net_usage");
+            options = rotateRightList;
         }
         //left rotate
         else{
-            displayPreference = preferences.getString("display_option_list", "net_usage");
+            displayPreference = preferences.getString("left_display_option_list", "refreshTime");
+            options = rotateLeftList;
         }
 
-        int index = Arrays.asList(rotateRightList).indexOf(displayPreference)+1;
-        if(index>= rotateRightList.length)
+        int index = Arrays.asList(options).indexOf(displayPreference)+1;
+        if(index>= options.length)
         {
             index = 0;
         }
-        String newDisplayPref = rotateRightList[index];
+        String newDisplayPref = options[index];
+
 
         Log.i(LOG_TAG, "Rotating display on widgets to " + newDisplayPref);
         //save our new preference
+
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("display_option_list",newDisplayPref);
+
+        if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
+
+            editor.putString("display_option_list",newDisplayPref);
+            long[] powerValues = new long[]{preferences.getLong(rotateRightList[0],0),preferences.getLong(rotateRightList[1], 0)};
+
+            String[] display = SetDisplay(newDisplayPref, powerValues);
+            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
+            
+        }
+        //left rotate
+        else{
+            editor.putString("left_display_option_list",newDisplayPref);
+
+            String[] display = SetLeftDisplay(newDisplayPref, preferences.getString(rotateLeftList[0], ""),preferences.getString(rotateLeftList[1], ""),preferences.getString(rotateLeftList[2], ""));
+            DrawLeftUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
+        }
+
         editor.commit();
-        long[] powerValues = new long[]{preferences.getLong(rotateRightList[0],0),preferences.getLong(rotateRightList[1], 0)};
-        String[] display = SetDisplay(newDisplayPref, powerValues);
-        DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout),display, appWidgetIds, appWidgetManager);
+
+
     }
 
 

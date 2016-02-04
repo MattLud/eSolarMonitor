@@ -3,11 +3,16 @@ package com.trumpetx.egauge.widget.util;
 import android.content.Context;
 
 import com.trumpetx.egauge.widget.NotConfiguredException;
+import com.trumpetx.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
 import com.trumpetx.egauge.widget.util.tasks.EGaugeApiInstanteousData;
 import com.trumpetx.egauge.widget.util.tasks.EGaugeApiStoredData;
 import com.trumpetx.egauge.widget.xml.EGaugeResponse;
+import com.trumpetx.egauge.widget.xml.storeddata.CurrentBillInfo;
 import com.trumpetx.egauge.widget.xml.storeddata.EGaugeStoredDataResponse;
+import com.trumpetx.egauge.widget.xml.storeddata.HistoricalData;
+import com.trumpetx.egauge.widget.xml.storeddata.StoredDataNode;
 
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Calendar;
@@ -46,7 +51,7 @@ public class EgaugeApiService {
     private String urlBase;
 
 
-    public EGaugeStoredDataResponse getCurrentBill(int dayBillTurnsOver) throws ExecutionException, InterruptedException
+    public CurrentBillInfo getCurrentBill(int dayBillTurnsOver, boolean insideAustin) throws ExecutionException, InterruptedException
     {
 
 
@@ -59,14 +64,94 @@ public class EgaugeApiService {
         int days = this.getDaysSinceBill(dayBillTurnsOver);
 
         HashMap data = new HashMap<>();
+        //TODO - do time zeroing so usage is measured @ time the bill turned over at. may need to add a day and zero time out to midnight
+        //think about DST also as you get an hour of missed time once a year - not a great deal as the bill maybe a couple of kWh short.
         data.put("n", days+"");
-        data.put("D", null);
+        data.put("d", null);
+        //ensures that we get an easy index for use!
+        data.put("a", null);
+        //TODO: add parameter to get only day bill turned over; not inbetween time
         URL egauge = buildUrl("egauge-show", data);
         EGaugeStoredDataResponse temp;
 
+        //populated object with historical data
         temp  = new EGaugeApiStoredData().execute(new URL[]{egauge}).get();
-        return temp;
+        return ProcessHistoricalData(temp,false, insideAustin);
     }
+
+    //note that we'll only support one register aggregation; need to also break out of Austin Energy billing
+    public CurrentBillInfo ProcessHistoricalData(EGaugeStoredDataResponse resp, boolean useNetMeter, boolean insideCityOfAustin)
+    {
+        int solarKwh = 0;
+        int used= 0;
+        int solarGrid = 1;
+        int produced = 0;
+        long currentUsage =  Long.MIN_VALUE;
+        long currentProduced = Long.MIN_VALUE;
+
+        long previousUsage = Long.MAX_VALUE;
+        long previousProduced = Long.MAX_VALUE;
+
+
+        //at some point actually scan them and set the index
+        //nodeData.getRegister_names()
+
+
+
+        //default is 0....
+        StoredDataNode nodeData = resp.getDataList().get(0);
+
+        //FIXME: Need to compute the daily cost as days that turnover into summer billing; confirm Scenario
+        //get first record(most current reading)
+        //HistoricalData todayData = nodeData.getHistoricalData().get(0);
+        ////get last record(day bill turned over)
+        HistoricalData billDayUsage = nodeData.getHistoricalData().get(nodeData.getHistoricalData().size() - 1);
+
+        //simple framework doesn't give us an "in- order" historical array; find our min/max
+        for (HistoricalData dataNode :nodeData.getHistoricalData()) {
+            long use = dataNode.getRegisterValue().get(produced).getValue();
+            long solr = dataNode.getRegisterValue().get(solarGrid).getValue();
+            if (currentUsage<=use)
+            {
+                currentUsage =use;
+            }
+            if(previousUsage>=use)
+            {
+                previousUsage = use;
+            }
+
+            if (currentProduced<=solr)
+            {
+                currentProduced =solr;
+            }
+            if(previousProduced>=solr)
+            {
+                previousProduced = solr;
+            }
+        }
+
+
+
+        //3600000 to convert from watt-seconds to kWh
+        solarKwh = Integer.parseInt(((currentProduced -  previousProduced)/3600000) + "");
+        used = Integer.parseInt(((currentUsage - previousUsage) / 3600000) + "");
+
+        //note that austin doesn't actually do this...
+        if(useNetMeter)
+        {
+
+        }
+        else{
+            CurrentBillInfo bill = new CurrentBillInfo();
+
+            bill.setCurrentBill(new AustinEnergyBillCalculator().CalculateBill((int) used, (int) solarKwh, insideCityOfAustin, new Date()));
+            bill.setKwhConsumed(used);
+            bill.setKwhProduced(solarKwh);
+            return bill;
+        }
+        return null;
+    }
+
 
     public int getDaysSinceBill(int dayBillTurnsOver)
     {
