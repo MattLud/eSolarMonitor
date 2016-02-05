@@ -58,10 +58,10 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         final int billTurnOverDate = preferences.getInt("bill_turn_over_date", 16);
 
 
-        final boolean showTime = preferences.getBoolean("show_time_checkbox", true);
+        
         final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
         final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
-        final String displayPreference = preferences.getString("display_option_list", "net_usage");
+        final String displayPreference = preferences.getString("right_display_option_list", "net_usage");
         final String leftDisplayPreference = preferences.getString("left_display_option_list", "refreshTime");
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
@@ -103,29 +103,34 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 e.printStackTrace();
             } catch (NotConfiguredException e) {
                 e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
 
-            if (object instanceof String) {
-                views.setTextViewText(R.id.displayLabel, (String) object);
+            if (object instanceof String || leftObject instanceof String) {
+                //views.setTextViewText(R.id.displayLabel, (String) object);
+                for (final int appWidgetId : appWidgetIds) {
+                    appWidgetManager.updateAppWidget(appWidgetId, views);
+                }
             } else if (object instanceof EGaugeResponse) {
 
-                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
-                CurrentBillInfo bill = (CurrentBillInfo) leftObject;
-                //cache our new values here.
+            long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
+            CurrentBillInfo bill = (CurrentBillInfo) leftObject;
+            //cache our new values here.
 
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putLong(rotateRightList[0], powerValues[0]);
-                editor.putLong(rotateRightList[1], powerValues[1]);
-                editor.putString(rotateLeftList[0], refreshTime);
-                editor.putString(rotateLeftList[1], (bill.getKwhConsumed() - bill.getKwhProduced()) + "");
-                editor.putString(rotateLeftList[2], bill.getCurrentBill().toPlainString());
-                editor.commit();
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putLong(rotateRightList[0], powerValues[0]);
+            editor.putLong(rotateRightList[1], powerValues[1]);
+            editor.putString(rotateLeftList[0], refreshTime);
+            editor.putString(rotateLeftList[1], (bill.getKwhConsumed() - bill.getKwhProduced()) + "");
+            editor.putString(rotateLeftList[2], bill.getCurrentBill().toPlainString());
+            editor.commit();
 
-                String[] rightDisplayValue = SetDisplay(displayPreference, powerValues);
-                String[] leftDisplayValue = SetLeftDisplay(leftDisplayPreference, refreshTime,(bill.getKwhConsumed() - bill.getKwhProduced()) + "",bill.getCurrentBill().toPlainString() );
-                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager);
-                DrawLeftUpdate(views, leftDisplayValue, appWidgetIds, appWidgetManager);
+            String[] rightDisplayValue = SetDisplay(displayPreference, powerValues);
+            String[] leftDisplayValue = SetLeftDisplay(leftDisplayPreference, refreshTime,(bill.getKwhConsumed() - bill.getKwhProduced()) + "",bill.getCurrentBill().toPlainString() );
+            DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager);
+            DrawLeftUpdate(views, leftDisplayValue, appWidgetIds, appWidgetManager);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -286,7 +291,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         //int widgetId = Integer.parseInt(intent.getAction().substring(ROTATE_RIGHT_DISPLAY.length()));
         if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
 
-            displayPreference = preferences.getString("display_option_list", "net_usage");
+            displayPreference = preferences.getString("right_display_option_list", "net_usage");
             options = rotateRightList;
         }
         //left rotate
@@ -310,7 +315,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
 
-            editor.putString("display_option_list",newDisplayPref);
+            editor.putString("right_display_option_list",newDisplayPref);
             long[] powerValues = new long[]{preferences.getLong(rotateRightList[0],0),preferences.getLong(rotateRightList[1], 0)};
 
             String[] display = SetDisplay(newDisplayPref, powerValues);

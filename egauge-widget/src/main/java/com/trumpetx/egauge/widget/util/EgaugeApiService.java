@@ -51,8 +51,7 @@ public class EgaugeApiService {
     private String urlBase;
 
 
-    public CurrentBillInfo getCurrentBill(int dayBillTurnsOver, boolean insideAustin) throws ExecutionException, InterruptedException
-    {
+    public CurrentBillInfo getCurrentBill(int dayBillTurnsOver, boolean insideAustin) throws Exception {
 
 
         /** to compute a bill we need the following
@@ -76,6 +75,10 @@ public class EgaugeApiService {
 
         //populated object with historical data
         temp  = new EGaugeApiStoredData().execute(new URL[]{egauge}).get();
+        if(temp==null)
+        {
+            throw new Exception("Error obtaining historical data");
+        }
         return ProcessHistoricalData(temp,false, insideAustin);
     }
 
@@ -99,6 +102,8 @@ public class EgaugeApiService {
 
 
         //default is 0....
+
+
         StoredDataNode nodeData = resp.getDataList().get(0);
 
         //FIXME: Need to compute the daily cost as days that turnover into summer billing; confirm Scenario

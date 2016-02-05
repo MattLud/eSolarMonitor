@@ -15,7 +15,7 @@
     <string name="pref_title_show_refresh">Show Refresh Button</string>
     <string name="pref_desc_show_refresh">Display refresh button on widget</string>
 
-    <string name="pref_title_enable_bill">Perform Austin Energy Bill Calculation</string>
+    <string name="pref_title_enable_bill">Austin Energy Bill Calculation</string>
     <string name="pref_desc_enable_bill">Disable this if the bill amounts are incorrect</string>
 
     <string name="pref_title_inside_city">Billing Location Inside City of Austin</string>
@@ -52,15 +52,5 @@
     </string-array>
 
     <string name="pref_title_display_option">Display Option</string>
-    <string-array name="pref_title_display_labels">
-        <item>Show \'Net\' Production / Usage</item>
-        <item>Show Production Only</item>
-        <item>Show Usage Only</item>
-    </string-array>
-    <string-array name="pref_title_display_option_values">
-        <item>net_usage</item>
-        <item>production</item>
-        <item>usage</item>
-        <item>bill</item>
-    </string-array>
+
 </resources>
