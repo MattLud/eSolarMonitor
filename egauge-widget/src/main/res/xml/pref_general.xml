@@ -5,8 +5,7 @@
         android:title="@string/pref_title_enable_sync"
         android:summary="@string/pref_desc_enable_sync"
         android:defaultValue="true" />
-
-    <EditTextPreference
+    <com.trumpetx.egauge.widget.util.ui.android.preferences.TrimmedEditTextPreference
         android:key="monitor_name_text"
         android:title="@string/pref_title_mon_name"
         android:defaultValue="@string/pref_default_mon_name"
@@ -16,7 +15,7 @@
         android:singleLine="true"
         android:maxLines="1" />
 
-    <EditTextPreference
+    <com.trumpetx.egauge.widget.util.ui.android.preferences.TrimmedEditTextPreference
         android:key="proxy_server_text"
         android:title="@string/pref_title_proxy_server"
         android:defaultValue="@string/pref_default_proxy_server"
@@ -25,8 +24,7 @@
         android:capitalize="words"
         android:singleLine="true"
         android:maxLines="1" />
-
-    <EditTextPreference
+    <com.trumpetx.egauge.widget.util.ui.android.preferences.TrimmedEditTextPreference
         android:key="grid_register_text"
         android:title="@string/pref_title_grid_register"
         android:defaultValue="@string/pref_default_grid_register"
@@ -35,8 +33,7 @@
         android:capitalize="words"
         android:singleLine="true"
         android:maxLines="1" />
-
-    <EditTextPreference
+    <com.trumpetx.egauge.widget.util.ui.android.preferences.TrimmedEditTextPreference
         android:key="solar_register_text"
         android:title="@string/pref_title_solar_register"
         android:defaultValue="@string/pref_default_solar_register"
@@ -52,15 +49,6 @@
         android:defaultValue="300"
         android:entries="@array/pref_sync_frequency_labels"
         android:entryValues="@array/pref_title_sync_frequency_values"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null" />
-
-    <ListPreference
-        android:key="display_option_list"
-        android:title="@string/pref_title_display_option"
-        android:defaultValue="net_usage"
-        android:entries="@array/pref_title_display_labels"
-        android:entryValues="@array/pref_title_display_option_values"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null" />
 
@@ -81,21 +69,6 @@
         android:title="@string/pref_title_show_refresh"
         android:summary="@string/pref_desc_show_refresh"
         android:defaultValue="true" />
-
-    <CheckBoxPreference
-        android:key="enable_bill_calculate"
-        android:title="@string/pref_title_enable_bill"
-        android:summary="@string/pref_desc_enable_bill"
-        android:defaultValue="true" />
-
-    <CheckBoxPreference
-        android:key="inside_city_of_austin"
-        android:title="@string/pref_title_inside_city"
-        android:summary="@string/pref_desc_inside_city"
-        android:defaultValue="true" />
-
-
-
 
 
 </PreferenceScreen>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">eSolar Monitor</string>
+    <string name="app_name">SolarTrckr</string>
     <string name="settings">Settings</string>
     <string name="settings_updated">Settings Updated</string>
     <string name="refresh">Refresh</string>

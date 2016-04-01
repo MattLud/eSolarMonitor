@@ -78,12 +78,14 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
 
         //change this to something better
-        Object object = "Error working";
+        String status = "Error";
+        EGaugeResponse response = null;
         if (enableSync) {
             try {
                 EgaugeApiService apiService = EgaugeApiService.getInstance(context);
-                object = apiService.getData();
+                response = apiService.getData();
             } catch (InterruptedException e) {
+                Toast.makeText(context, "Test", Toast.LENGTH_SHORT);
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
@@ -97,11 +99,16 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             } else {
                 views.setViewVisibility(R.id.updatedLabel, View.GONE);
             }
-            if (object instanceof String) {
-                views.setTextViewText(R.id.displayLabel, (String) object);
-            } else if (object instanceof EGaugeResponse) {
 
-                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
+
+            if (response == null) {
+                views.setTextViewText(R.id.displayLabel, (String) status);
+                for (final int appWidgetId : appWidgetIds) {
+                    appWidgetManager.updateAppWidget(appWidgetId, views);
+                }
+            } else {
+
+                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) response);
                 //cache our new values here.
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putLong(rotateList[0], powerValues[0]);
