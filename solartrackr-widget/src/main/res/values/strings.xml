@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">SolarTrackr</string>
+    <string name="settings">Settings</string>
+    <string name="settings_updated">Settings Updated</string>
+    <string name="refresh">Refresh</string>
+    <string name="not_available">N/A</string>
+    <string name="lbl_refresh">Last Refresh</string>
+    <string name="lbl_display">Usage</string>
+</resources>
