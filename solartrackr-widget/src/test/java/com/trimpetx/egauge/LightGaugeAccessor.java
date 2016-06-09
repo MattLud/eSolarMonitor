@@ -15,9 +15,3 @@ import java.util.Date;
 /**
  * Created by ludlumm on 1/14/2016.
  */
-
-public class BillCalculator {
-
-
-
-}
