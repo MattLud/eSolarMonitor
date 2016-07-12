@@ -34,8 +34,11 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String LOG_TAG = "eGaugeWidget";
     private static final String POWER = "P";
     private DateFormat df = new SimpleDateFormat("hh:mma");
-    private static final String rotateCick = "rotateCick";
-    private static final String [] rotateList = new String [] {"usage","production", "net_usage"};//, "bill"};
+    private static final String ROTATE_RIGHT_DISPLAY = "ROTATE_RIGHT_DISPLAY";
+    private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
+
+    private static final String [] rotateRightList = new String [] {"usage","production", "net_usage"};//, "bill"};
+    private static final String [] rotateLeftList = new String [] {"refreshTime","monthlyUsage", "currentBill",};//, "bill"};
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -57,6 +60,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
         final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
         final String displayPreference = preferences.getString("display_option_list", "net_usage");
+        final String leftDisplayPreference = preferences.getString("left_display_option_list", "refreshTime");
+
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
@@ -109,8 +114,11 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) response);
                 //cache our new values here.
                 SharedPreferences.Editor editor = preferences.edit();
-                editor.putLong(rotateList[0], powerValues[0]);
-                editor.putLong(rotateList[1], powerValues[1]);
+                editor.putLong(rotateRightList[0], powerValues[0]);
+                editor.putLong(rotateRightList[1], powerValues[1]);
+                editor.putString(rotateLeftList[0], refreshTime);
+                editor.putString(rotateLeftList[1], (bill.getKwhConsumed() - bill.getKwhProduced()) + "");
+                editor.putString(rotateLeftList[2], bill.getCurrentBill().toPlainString());
                 editor.commit();
                 String[] displayValue = SetDisplay(displayPreference, powerValues);
                 DrawUpdate(views, displayValue, appWidgetIds, appWidgetManager);

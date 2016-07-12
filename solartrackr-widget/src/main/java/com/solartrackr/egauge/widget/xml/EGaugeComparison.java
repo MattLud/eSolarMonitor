@@ -1,15 +1,14 @@
 package com.solartrackr.egauge.widget.xml;
 
 import org.simpleframework.xml.Attribute;
+import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
-
-import java.util.List;
 
 /**
  * Created by mludlum on 5/25/16.
  */
-@Root(name = "group", strict = false)
+@Root(name = "data", strict = false)
 public class EGaugeComparison {
     /*
 <group serial="0x65f48906">
@@ -45,27 +44,41 @@ public class EGaugeComparison {
     @Attribute
     private String serial;
 
-    @Path("data[1]/r")
-    private HistoricalData NewRecord;
+    @Element(name = "v")
+    @Path("r[1]")
+    private long Grid;
 
-    public HistoricalData getNewRecord() {
-        return NewRecord;
+    public long getGrid() {
+        return Grid;
     }
 
-    public void setNewRecord(HistoricalData newRecord) {
-        NewRecord = newRecord;
+    public void setGrid(long grid) {
+        Grid = grid;
     }
 
-    public HistoricalData getOlderRecord() {
-        return OlderRecord;
+    public long getSolar() {
+        return SolarPlus;
     }
 
-    public void setOlderRecord(HistoricalData olderRecord) {
-        OlderRecord = olderRecord;
+    public void setSolar(long olderRecord) {
+        SolarPlus = olderRecord;
     }
 
-    @Path("data[2]/r")
-    private HistoricalData OlderRecord;
+    @Element(name = "v")
+    @Path("r[2]")
+    private long Solar;
+
+    public long getSolarPlus() {
+        return SolarPlus;
+    }
+
+    public void setSolarPlus(long solarPlus) {
+        SolarPlus = solarPlus;
+    }
+
+    @Element(name = "v")
+    @Path("r[3]")
+    private long SolarPlus;
 
 
 
