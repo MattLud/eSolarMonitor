@@ -1,6 +1,4 @@
-package com.trimpetx.egauge.tests;
-
-import android.util.Log;
+package com.solartrackr.egauge.tests;
 
 import com.solartrackr.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
 import com.solartrackr.egauge.widget.util.billcalculators.IBillCalculator;
