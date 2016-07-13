@@ -3,11 +3,16 @@ package com.solartrackr.egauge.widget.util;
 import android.content.Context;
 
 import com.solartrackr.egauge.widget.NotConfiguredException;
+import com.solartrackr.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
+import com.solartrackr.egauge.widget.util.tasks.EGaugeApiComparisonData;
 import com.solartrackr.egauge.widget.util.tasks.EGaugeApiHistoricalData;
+import com.solartrackr.egauge.widget.xml.EGaugeComparison;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +45,25 @@ public class EgaugeApiService {
         data.put("D", null);
         URL egauge = buildUrl("egauge",data);
         EGaugeResponse hd = new EGaugeApiHistoricalData().execute(egauge).get();
+    }
+
+    public BigDecimal getSavingsMonthToDate() throws ExecutionException, InterruptedException {
+        setUrlBase("http://lg1512.d.lighthousesolar.com/");
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR,0);
+        cal.set(Calendar.MINUTE,0);
+        cal.set(Calendar.AM_PM, Calendar.AM);
+
+        Calendar calendar = Calendar.getInstance();
+        //http://lg1512.d.lighthousesolar.com/cgi-bin/egauge-show?C&T=1463646300,1462078800,
+        HashMap data = new HashMap<>();
+        data.put("T",(int)(calendar.getTimeInMillis()/1000) +"," + (int)(cal.getTimeInMillis()/1000));
+        data.put("C", null);
+        URL egauge = buildUrl("egauge-show",data);
+        EGaugeComparison monthToDateValues = new EGaugeApiComparisonData().execute(new URL[]{egauge}).get();
+        return new AustinEnergyBillCalculator().GetSavings(monthToDateValues.getMTDValues().get(3));
+
     }
 
 

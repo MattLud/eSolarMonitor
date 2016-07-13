@@ -54,13 +54,18 @@ public class BillCalculator {
         setUrlBase("http://lg1512.d.lighthousesolar.com/");
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR,0);
+        cal.set(Calendar.MINUTE,0);
+        cal.set(Calendar.AM_PM, Calendar.AM);
 
         Calendar calendar = Calendar.getInstance();
         //http://lg1512.d.lighthousesolar.com/cgi-bin/egauge-show?C&T=1463646300,1462078800,
         HashMap data = new HashMap<>();
-        data.put("T",calendar.getTimeInMillis() +"," + cal.getTimeInMillis());
+        //data.put("T",(int)(calendar.getTimeInMillis()/1000) +"," + (int)(cal.getTimeInMillis()/1000));
+        data.put("T","1468451195,1467349235,");
+
         data.put("C", null);
-        URL egauge = buildUrl("egauge",data);
+        URL egauge = buildUrl("egauge-show",data);
 
         EGaugeComparison testValue =  Getdata(new URL[]{egauge});
         Assert.assertNotNull(testValue);
@@ -84,6 +89,7 @@ public class BillCalculator {
             appender = "&";
         }
         try {
+            System.out.println(url.toString());
             return new URL(url.toString());
         } catch (MalformedURLException e) {
             e.printStackTrace();
