@@ -13,13 +13,14 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
-import android.widget.Toast;
 
 import com.solartrackr.egauge.widget.util.EgaugeApiService;
 import com.solartrackr.egauge.widget.util.EgaugeIntents;
 import com.solartrackr.egauge.widget.util.NetworkConnection;
+import com.solartrackr.egauge.widget.util.ValueDTO;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 import com.solartrackr.egauge.widget.xml.Register;
+import com.solartrackr.egauge.widget.util.Formatter;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -29,6 +30,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.*;
+
+
+
 
 public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String LOG_TAG = "eGaugeWidget";
