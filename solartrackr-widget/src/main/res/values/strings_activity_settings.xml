@@ -6,6 +6,12 @@
     <string name="pref_title_enable_sync">Enable Synchronization</string>
     <string name="pref_desc_enable_sync">Enable the widget to synchronize with your eGauge monitoring system</string>
 
+    <string name="pref_title_enable_bill">Austin Energy Bill Calculation</string>
+    <string name="pref_desc_enable_bill">Disable this if the bill amounts are incorrect</string>
+
+    <string name="pref_title_inside_city">Billing Location Inside City of Austin</string>
+    <string name="pref_desc_inside_city">Determines what tier to use for billing and alerts </string>
+
     <string name="pref_title_show_time">Show Last Updated Time</string>
     <string name="pref_desc_show_time">Displays the time when the widget was last updated</string>
 
