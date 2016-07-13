@@ -69,9 +69,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
         views.setOnClickPendingIntent(R.id.lbl_display,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
 
-//        views.setOnClickPendingIntent(R.id.lbl_refresh,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
-//        views.setOnClickPendingIntent(R.id.updatedLabel,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
-
         if (showRefresh) {
             views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
             views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
@@ -148,9 +145,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         for (final int appWidgetId : appWidgetIds) {
 
             views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
-            views.setTextViewText(R.id.displayLabel, rightDisplayValue[1] + "" + Register.REGISTER_TYPE_LABELS.get(POWER));
-            views.setTextColor(R.id.displayLabel, (Long.parseLong(rightDisplayValue[1]) > 0) ? Color.GREEN : Color.RED);
-
+            views.setTextViewText(R.id.displayLabel, rightDisplayValue[1]);
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
@@ -166,28 +161,25 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         String label = "";
 
         Log.i(LOG_TAG, "Matching following display " + displayPreference );
-        //todo: autoformat kwh to proper scale; do same for cash
         //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
         switch (displayPreference) {
             case "usage":
                 //move to strings
                 label = "Usage";
-                displayValue = (usageTotal * -1)+"";
-                //= new AbstractMap.SimpleEntry<String,String>("House Use", );
+                displayValue = Formatter.asWatts( ((float)usageTotal)).DisplayableValue;
                 break;
             case "production":
                 //Panel output
                 label = "Solar Prod";
-                displayValue = generationTotal+"";
+                displayValue = Formatter.asWatts( ((float)generationTotal)).DisplayableValue;
                 break;
-
-
             case "net_usage":
             default:
-                displayValue = (gridTotal * -1)+"";
                 label = "Net Usage";
+                displayValue = Formatter.asWatts( ((float)gridTotal)).DisplayableValue;
         }
-        return new String[]{label, displayValue+""};
+
+        return new String[]{label, displayValue};
     }
 
     private long[]GetProperRegisters(SharedPreferences preferences, EGaugeResponse response)
