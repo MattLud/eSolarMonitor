@@ -51,12 +51,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     public void onUpdate(Context context, final AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
         final boolean enableSync = preferences.getBoolean("enable_sync_checkbox", false) && NetworkConnection.hasNetworkConnection(context);
-        //Add multiple fields in the future, one for solar payback/net meter/tier setup/auto config provider...etc. Likely will need it's own thing
-        final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
-        final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
-        final int billTurnOverDate = preferences.getInt("bill_turn_over_date", 16);
-
-
 
         final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
         final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
@@ -65,16 +59,20 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+
         if (showSettings) {
             views.setViewVisibility(R.id.settings_button, View.VISIBLE);
             views.setOnClickPendingIntent(R.id.settings_button, EgaugeIntents.createSettingsPendingIntent(context));
         } else {
             views.setViewVisibility(R.id.settings_button, View.GONE);
         }
+
         views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
         views.setOnClickPendingIntent(R.id.lbl_display,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
-        views.setOnClickPendingIntent(R.id.lbl_refresh,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
-        views.setOnClickPendingIntent(R.id.updatedLabel,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
+
+//        views.setOnClickPendingIntent(R.id.lbl_refresh,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
+//        views.setOnClickPendingIntent(R.id.updatedLabel,getPengingSelfIntent(context, ROTATE_LEFT_DISPLAY));
+
         if (showRefresh) {
             views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
             views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
@@ -128,8 +126,9 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
                 String[] rightDisplayValue = SetDisplay(displayPreference, powerValues);
                 String[] leftDisplayValue   = SetLeftDisplay(leftDisplayPreference, refreshTime,"1","2" );
+
                 DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager);
-                DrawLeftUpdate(views, leftDisplayValue, appWidgetIds, appWidgetManager);
+//                DrawLeftUpdate(views, leftDisplayValue, appWidgetIds, appWidgetManager);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -155,6 +154,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
             views.setTextViewText(R.id.displayLabel, rightDisplayValue[1] + "" + Register.REGISTER_TYPE_LABELS.get(POWER));
             views.setTextColor(R.id.displayLabel, (Long.parseLong(rightDisplayValue[1]) > 0) ? Color.GREEN : Color.RED);
+
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
@@ -165,8 +165,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         for (final int appWidgetId : appWidgetIds) {
 
 
-            views.setTextViewText(R.id.lbl_refresh, leftDisplayValue[0]);
-            views.setTextViewText(R.id.updatedLabel, leftDisplayValue[1]);
+//            views.setTextViewText(R.id.lbl_refresh, leftDisplayValue[0]);
+//            views.setTextViewText(R.id.updatedLabel, leftDisplayValue[1]);
             //views.setTextColor(R.id.updatedLabel, (Long.parseLong(rightDisplayValue[1]) > 0) ? Color.GREEN : Color.RED);
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
@@ -326,7 +326,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             editor.putString("left_display_option_list",newDisplayPref);
 
             String[] display = SetLeftDisplay(newDisplayPref, preferences.getString(rotateLeftList[0], ""),preferences.getString(rotateLeftList[1], ""),preferences.getString(rotateLeftList[2], ""));
-            DrawLeftUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
+//            DrawLeftUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
         }
 
         editor.commit();

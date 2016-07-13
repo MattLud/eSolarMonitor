@@ -8,6 +8,17 @@
     android:background="#000000">
 
     <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="@string/lbl_display"
+        android:id="@+id/lbl_display"
+        android:textColor="#ffffff"
+        android:gravity="center"
+        android:layout_alignTop="@+id/settings_button"
+        android:paddingLeft="10dp" />
+
+    <TextView
         android:id="@+id/displayLabel"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
@@ -15,24 +26,8 @@
         android:text="@string/not_available"
         android:textColor="#ffffff"
         android:paddingLeft="10dp"
-        android:paddingRight="0dp"
         android:layout_centerVertical="true"
-        android:layout_toRightOf="@+id/lbl_refresh"
-        android:layout_toEndOf="@+id/lbl_refresh"
         android:clickable="true" />
-
-    <TextView
-        android:id="@+id/updatedLabel"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:layout_width="wrap_content"
-        android:text="@string/not_available"
-        android:textColor="#ffffff"
-        android:paddingLeft="10dp"
-        android:paddingRight="20dp"
-        android:layout_below="@+id/lbl_refresh"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
 
     <ImageButton
         android:src="@drawable/settings"
@@ -52,33 +47,20 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="@string/lbl_refresh"
-        android:id="@+id/lbl_refresh"
-        android:textColor="#ffffff"
-        android:gravity="center"
-        android:paddingLeft="10dp"
-        android:textAlignment="center"
-        android:paddingRight="10dp"
-        android:layout_alignBaseline="@+id/lbl_display"
-        android:layout_alignBottom="@+id/lbl_display"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="@string/lbl_display"
-        android:id="@+id/lbl_display"
-        android:textColor="#ffffff"
-        android:gravity="center"
-        android:layout_alignTop="@+id/settings_button"
-        android:layout_toRightOf="@+id/lbl_refresh"
-        android:layout_toEndOf="@+id/lbl_refresh"
-        android:paddingLeft="10dp" />
+    <!--<TextView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:textAppearance="?android:attr/textAppearanceSmall"-->
+        <!--android:text="@string/lbl_refresh"-->
+        <!--android:id="@+id/lbl_refresh"-->
+        <!--android:textColor="#ffffff"-->
+        <!--android:gravity="center"-->
+        <!--android:paddingLeft="10dp"-->
+        <!--android:textAlignment="center"-->
+        <!--android:paddingRight="10dp"-->
+        <!--android:layout_alignBaseline="@+id/lbl_display"-->
+        <!--android:layout_alignBottom="@+id/lbl_display"-->
+        <!--android:layout_alignParentLeft="true"-->
+        <!--android:layout_alignParentStart="true" />-->
 
 </RelativeLayout>
