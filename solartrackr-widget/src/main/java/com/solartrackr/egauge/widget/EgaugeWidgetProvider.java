@@ -55,7 +55,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
         final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
         final String displayPreference = preferences.getString("right_display_option_list", "net_usage");
-        final String leftDisplayPreference = preferences.getString("left_display_option_list", "refreshTime");
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
@@ -125,10 +124,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 editor.commit();
 
                 String[] rightDisplayValue = SetDisplay(displayPreference, powerValues);
-                String[] leftDisplayValue   = SetLeftDisplay(leftDisplayPreference, refreshTime,"1","2" );
-
                 DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager);
-//                DrawLeftUpdate(views, leftDisplayValue, appWidgetIds, appWidgetManager);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -158,20 +154,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
-
-
-    private void DrawLeftUpdate(RemoteViews views,  String[] leftDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager )
-    {
-        for (final int appWidgetId : appWidgetIds) {
-
-
-//            views.setTextViewText(R.id.lbl_refresh, leftDisplayValue[0]);
-//            views.setTextViewText(R.id.updatedLabel, leftDisplayValue[1]);
-            //views.setTextColor(R.id.updatedLabel, (Long.parseLong(rightDisplayValue[1]) > 0) ? Color.GREEN : Color.RED);
-            appWidgetManager.updateAppWidget(appWidgetId, views);
-        }
-    }
-
 
     private String[] SetDisplay(String displayPreference, long[] powerValues)
     {
@@ -204,30 +186,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             default:
                 displayValue = (gridTotal * -1)+"";
                 label = "Net Usage";
-        }
-        return new String[]{label, displayValue+""};
-    }
-
-    private String[] SetLeftDisplay(String displayPreference,String timeRefreshed, String kwh, String bill)
-    {
-        String displayValue;
-        String label = "";
-        switch (displayPreference) {
-
-            case "refreshTime":
-            default:
-                label = "Last Refresh";
-                displayValue = timeRefreshed;
-                break;
-            case "monthlyUsage":
-                label = "Bill usage";
-                displayValue = kwh + "kWh";
-                break;
-            case "currentBill":
-                label = "Current Bill";
-                //change out to
-                displayValue = "$" + bill;
-                break;
         }
         return new String[]{label, displayValue+""};
     }
@@ -287,17 +245,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         String displayPreference;
         String[] options;
 
-        //int widgetId = Integer.parseInt(intent.getAction().substring(ROTATE_RIGHT_DISPLAY.length()));
-        if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
-
-            displayPreference = preferences.getString("right_display_option_list", "net_usage");
-            options = rotateRightList;
-        }
-        //left rotate
-        else{
-            displayPreference = preferences.getString("left_display_option_list", "refreshTime");
-            options = rotateLeftList;
-        }
+        displayPreference = preferences.getString("right_display_option_list", "net_usage");
+        options = rotateRightList;
 
         int index = Arrays.asList(options).indexOf(displayPreference)+1;
         if(index>= options.length)
@@ -319,19 +268,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
             String[] display = SetDisplay(newDisplayPref, powerValues);
             DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
-
         }
-        //left rotate
-        else{
-            editor.putString("left_display_option_list",newDisplayPref);
-
-            String[] display = SetLeftDisplay(newDisplayPref, preferences.getString(rotateLeftList[0], ""),preferences.getString(rotateLeftList[1], ""),preferences.getString(rotateLeftList[2], ""));
-//            DrawLeftUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
-        }
-
         editor.commit();
-
-
     }
 
 
