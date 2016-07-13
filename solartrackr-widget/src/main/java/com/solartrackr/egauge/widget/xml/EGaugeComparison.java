@@ -2,13 +2,16 @@ package com.solartrackr.egauge.widget.xml;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
+import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
+
+import java.util.List;
 
 /**
  * Created by mludlum on 5/25/16.
  */
-@Root(name = "data", strict = false)
+@Root(name = "data[2]", strict = false)
 public class EGaugeComparison {
     /*
 <group serial="0x65f48906">
@@ -44,41 +47,82 @@ public class EGaugeComparison {
     @Attribute
     private String serial;
 
-    @Element(name = "v")
-    @Path("r[1]")
-    private long Grid;
+    @Path("data[0]/r")
+    @ElementList(inline=true,required=false, entry="c")
+    private List<Long> CurrentValues;
 
-    public long getGrid() {
-        return Grid;
+    @Path("data[1]/r")
+    @ElementList(inline=true,required=false, entry="c")
+    private List<Long> RegisterValues;
+
+    public List<Long> getMTDValues() {
+        return MTDValues;
     }
 
-    public void setGrid(long grid) {
-        Grid = grid;
+    public void setMTDValues(List<Long> MTDValues) {
+        this.MTDValues = MTDValues;
     }
 
-    public long getSolar() {
-        return SolarPlus;
+    @Path("data[2]/r")
+    @ElementList(inline=true,required=false, entry="c")
+    private List<Long> MTDValues;
+
+
+    public List<Long> getRegisterValues() {
+        return RegisterValues;
     }
 
-    public void setSolar(long olderRecord) {
-        SolarPlus = olderRecord;
+    public void setRegisterValues(List<Long> registerValues) {
+        RegisterValues = registerValues;
     }
 
-    @Element(name = "v")
-    @Path("r[2]")
-    private long Solar;
-
-    public long getSolarPlus() {
-        return SolarPlus;
+    public List<Long> getCurrentValues() {
+        return CurrentValues;
     }
 
-    public void setSolarPlus(long solarPlus) {
-        SolarPlus = solarPlus;
+    public void setCurrentValues(List<Long> currentValues) {
+        CurrentValues = currentValues;
     }
 
-    @Element(name = "v")
-    @Path("r[3]")
-    private long SolarPlus;
+
+
+
+//    @Element(name = "c[1]")
+//    @Path("data[2]/r")
+//    private long Grid;
+//
+//    public long getGrid() {
+//        return Grid;
+//    }
+//
+
+//    public void setGrid(long grid) {
+//        Grid = grid;
+//    }
+//
+//    public long getSolar() {
+//        return SolarPlus;
+//    }
+//
+//    public void setSolar(long olderRecord) {
+//        SolarPlus = olderRecord;
+//    }
+//
+//    @Element(name = "c[2]")
+//    @Path("data[2]/r")
+//    private long Solar;
+//
+//    public long getSolarPlus() {
+//        return SolarPlus;
+//    }
+//
+//    public void setSolarPlus(long solarPlus) {
+//        SolarPlus = solarPlus;
+//    }
+//
+//    @Element(name = "c[3]")
+//    @Path("data[2]/r")
+//    private long SolarPlus;
 
 
 

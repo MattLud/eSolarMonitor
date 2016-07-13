@@ -42,6 +42,10 @@ public class AustinEnergyBillCalculator implements IBillCalculator{
     private static String [] summerMonths = new String [] {"June", "July", "August", "September"};
 
 
+    public BigDecimal GetSavings(long solarKwh)
+    {
+        return  solarPayback.multiply(new BigDecimal(solarKwh));
+    }
 
 
     //method to compute Austin Energy bill based on month;
