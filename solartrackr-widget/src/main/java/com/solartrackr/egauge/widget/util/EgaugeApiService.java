@@ -1,6 +1,7 @@
 package com.solartrackr.egauge.widget.util;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.solartrackr.egauge.widget.NotConfiguredException;
 import com.solartrackr.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
@@ -43,7 +44,7 @@ public class EgaugeApiService {
         HashMap data = new HashMap<>();
         data.put("n", 30);
         data.put("D", null);
-        URL egauge = buildUrl("egauge",data);
+        URL egauge = buildUrl("egauge",data,false);
         EGaugeResponse hd = new EGaugeApiHistoricalData().execute(egauge).get();
     }
 
@@ -58,11 +59,11 @@ public class EgaugeApiService {
         Calendar calendar = Calendar.getInstance();
         //http://lg1512.d.lighthousesolar.com/cgi-bin/egauge-show?C&T=1463646300,1462078800,
         HashMap data = new HashMap<>();
+
         data.put("T",(int)(calendar.getTimeInMillis()/1000) +"," + (int)(cal.getTimeInMillis()/1000));
-        data.put("C", null);
-        URL egauge = buildUrl("egauge-show",data);
+        URL egauge = buildUrl("egauge-show",data,true);
         EGaugeComparison monthToDateValues = new EGaugeApiComparisonData().execute(new URL[]{egauge}).get();
-        return new AustinEnergyBillCalculator().GetSavings(monthToDateValues.getMTDValues().get(3));
+        return new AustinEnergyBillCalculator().GetSavings(Math.abs(monthToDateValues.getMTDValues().get(2))/3600000);
 
     }
 
@@ -72,14 +73,18 @@ public class EgaugeApiService {
         HashMap data = new HashMap<>();
         data.put("inst", null);
         data.put("v1", null);
-        URL egauge = buildUrl("egauge",data);
+        URL egauge = buildUrl("egauge",data,false);
         return new EGaugeApiHistoricalData().execute(new URL[]{egauge}).get();
     }
 
 
-    private URL buildUrl(String target,  Map<String, String> params) {
+    private URL buildUrl(String target,  Map<String, String> params,boolean compressed) {
         StringBuilder url = new StringBuilder(urlBase).append(target);
         String appender = "?";
+        if(compressed)
+        {
+            appender+="C&";
+        }
         for (Map.Entry<String, String> entry : params.entrySet()) {
             url.append(appender).append(entry.getKey());
             if (entry.getValue() != null) {

@@ -47,11 +47,11 @@ public class EGaugeComparison {
     @Attribute
     private String serial;
 
-    @Path("data[0]/r")
+    @Path("data[1]/r")
     @ElementList(inline=true,required=false, entry="c")
     private List<Long> CurrentValues;
 
-    @Path("data[1]/r")
+    @Path("data[2]/r")
     @ElementList(inline=true,required=false, entry="c")
     private List<Long> RegisterValues;
 
@@ -63,7 +63,7 @@ public class EGaugeComparison {
         this.MTDValues = MTDValues;
     }
 
-    @Path("data[2]/r")
+    @Path("data[3]/r")
     @ElementList(inline=true,required=false, entry="c")
     private List<Long> MTDValues;
 
