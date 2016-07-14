@@ -44,7 +44,7 @@ public class AustinEnergyBillCalculator implements IBillCalculator{
 
     public BigDecimal GetSavings(long solarKwh)
     {
-        return  solarPayback.multiply(new BigDecimal(solarKwh));
+        return  solarPayback.multiply(new BigDecimal(solarKwh)).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 
 

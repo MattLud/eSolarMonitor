@@ -22,6 +22,7 @@ import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 import com.solartrackr.egauge.widget.xml.Register;
 import com.solartrackr.egauge.widget.util.Formatter;
 
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -40,10 +41,10 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String POWER = "P";
     private DateFormat df = new SimpleDateFormat("hh:mma");
     private static final String ROTATE_RIGHT_DISPLAY = "ROTATE_RIGHT_DISPLAY";
-    private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
+    //private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
 
-    private static final String [] rotateRightList = new String [] {"usage","production", "net_usage"};//, "bill"};
-    private static final String [] rotateLeftList = new String [] {"refreshTime","monthlyUsage", "currentBill",};//, "bill"};
+    private static final String [] rotateRightList = new String [] {"usage","production", "net_usage", "savings"};//, "bill"};
+    //private static final String [] rotateLeftList = new String [] {"refreshTime","monthlyUsage", "currentBill",};//, "bill"};
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -84,13 +85,14 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         //change this to something better
         EGaugeResponse object = null;
-        Object leftObject = "Error working";
+        BigDecimal kwhSavings = null;
         String refreshTime = df.format(new Date());
         if (enableSync) {
             try {
                 EgaugeApiService apiService = EgaugeApiService.getInstance(context);
                 //get snapshot of usage
                 object = apiService.getData();
+                kwhSavings = apiService.getSavingsMonthToDate();
                 //get last bill total
                 //hard coded to 16
                 //leftObject = apiService.getCurrentBill(billTurnOverDate, insideCityOfAustin);
@@ -106,7 +108,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             }
 
 
-            if (object ==null || leftObject == null) {
+            if (object ==null || kwhSavings == null) {
                 //views.setTextViewText(R.id.displayLabel, (String) object);
                 for (final int appWidgetId : appWidgetIds) {
                     appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -114,18 +116,18 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             } else if (object instanceof EGaugeResponse) {
 
                 long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
+
                 //CurrentBillInfo bill = (CurrentBillInfo) leftObject;
                 //cache our new values here.
 
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putLong(rotateRightList[0], powerValues[0]);
                 editor.putLong(rotateRightList[1], powerValues[1]);
-                editor.putString(rotateLeftList[0], refreshTime);
-                editor.putString(rotateLeftList[1], "1");
-                editor.putString(rotateLeftList[2], "2");
+                //skip unused cache
+                editor.putString(rotateRightList[3],kwhSavings.toString());
                 editor.commit();
 
-                String[] rightDisplayValue = SetDisplay(displayPreference, powerValues);
+                String[] rightDisplayValue = SetDisplay(displayPreference, powerValues,kwhSavings.toString());
                 DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager);
             }
         } else {
@@ -155,7 +157,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    private String[] SetDisplay(String displayPreference, long[] powerValues)
+    private String[] SetDisplay(String displayPreference, long[] powerValues, String savings)
     {
         long gridTotal = powerValues[0];
         long generationTotal = powerValues[1];
@@ -166,6 +168,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         String label = "";
 
         Log.i(LOG_TAG, "Matching following display " + displayPreference );
+        System.out.println(displayPreference);
         //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
         switch (displayPreference) {
             case "usage":
@@ -177,6 +180,10 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 //Panel output
                 label = "Solar Prod";
                 displayValue = Formatter.asWatts( ((float)generationTotal)).DisplayableValue;
+                break;
+            case "savings":
+                label = "Monthly Savings";
+                displayValue = "$" + savings;
                 break;
             case "net_usage":
             default:
@@ -263,7 +270,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             editor.putString("right_display_option_list",newDisplayPref);
             long[] powerValues = new long[]{preferences.getLong(rotateRightList[0],0),preferences.getLong(rotateRightList[1], 0)};
 
-            String[] display = SetDisplay(newDisplayPref, powerValues);
+            String[] display = SetDisplay(newDisplayPref, powerValues,preferences.getString(rotateRightList[3],"0.00"));
             DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
         }
         editor.commit();
@@ -319,9 +326,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         } else if (ROTATE_RIGHT_DISPLAY.equals(intent.getAction()))
         {
             rotateDisplay(context, intent, ROTATE_RIGHT_DISPLAY);
-        } else if (ROTATE_LEFT_DISPLAY.equals(intent.getAction()))
-        {
-            rotateDisplay(context, intent, ROTATE_LEFT_DISPLAY);
         }
 
     }
