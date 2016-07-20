@@ -60,10 +60,17 @@ public class EgaugeApiService {
         //http://lg1512.d.lighthousesolar.com/cgi-bin/egauge-show?C&T=1463646300,1462078800,
         HashMap data = new HashMap<>();
 
-        data.put("T",(int)(calendar.getTimeInMillis()/1000) +"," + (int)(cal.getTimeInMillis()/1000));
+        data.put("T", (int) (calendar.getTimeInMillis() / 1000) + "," + (int) (cal.getTimeInMillis() / 1000));
         URL egauge = buildUrl("egauge-show",data,true);
         EGaugeComparison monthToDateValues = new EGaugeApiComparisonData().execute(new URL[]{egauge}).get();
-        return new AustinEnergyBillCalculator().GetSavings(Math.abs(monthToDateValues.getMTDValues().get(2))/3600000);
+        //weird issue with inconsistent xml structure of api return
+        // =if the MTD values are null, use the register value(second data element) in xml
+        if(monthToDateValues.getMTDValues()==null)
+        {
+            return new AustinEnergyBillCalculator().GetSavings(Math.abs(monthToDateValues.getRegisterValues().get(2))/ 3600000);
+
+        }
+        return new AustinEnergyBillCalculator().GetSavings(Math.abs(monthToDateValues.getMTDValues().get(2))/ 3600000);
 
     }
 

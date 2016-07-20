@@ -8,7 +8,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -17,7 +16,6 @@ import android.widget.RemoteViews;
 import com.solartrackr.egauge.widget.util.EgaugeApiService;
 import com.solartrackr.egauge.widget.util.EgaugeIntents;
 import com.solartrackr.egauge.widget.util.NetworkConnection;
-import com.solartrackr.egauge.widget.util.ValueDTO;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 import com.solartrackr.egauge.widget.xml.Register;
 import com.solartrackr.egauge.widget.util.Formatter;
@@ -31,9 +29,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.*;
-
-
 
 
 public class EgaugeWidgetProvider extends AppWidgetProvider {
@@ -43,7 +38,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String ROTATE_RIGHT_DISPLAY = "ROTATE_RIGHT_DISPLAY";
     //private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
 
-    private static final String [] rotateRightList = new String [] {"usage","production", "net_usage", "savings"};//, "bill"};
+    private static final String [] rotateList = new String [] {"usage","production", "net_usage", "savings"};//, "bill"};
     //private static final String [] rotateLeftList = new String [] {"refreshTime","monthlyUsage", "currentBill",};//, "bill"};
 
     /**
@@ -121,14 +116,15 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 //cache our new values here.
 
                 SharedPreferences.Editor editor = preferences.edit();
-                editor.putLong(rotateRightList[0], powerValues[0]);
-                editor.putLong(rotateRightList[1], powerValues[1]);
+                editor.putLong(rotateList[0], powerValues[0]);
+                editor.putLong(rotateList[1], powerValues[1]);
                 //skip unused cache
-                editor.putString(rotateRightList[3],kwhSavings.toString());
+                editor.putString(rotateList[3],kwhSavings.toString());
+                editor.putString("time", refreshTime);
                 editor.commit();
 
                 String[] rightDisplayValue = SetDisplay(displayPreference, powerValues,kwhSavings.toString());
-                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager);
+                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager,refreshTime);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -148,11 +144,12 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     }
 
 
-    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager ) {
+    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager,String time ) {
         for (final int appWidgetId : appWidgetIds) {
 
             views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
             views.setTextViewText(R.id.displayLabel, rightDisplayValue[1]);
+            views.setTextViewText(R.id.time, time);
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
@@ -250,7 +247,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         String[] options;
 
         displayPreference = preferences.getString("right_display_option_list", "net_usage");
-        options = rotateRightList;
+        options = rotateList;
 
         int index = Arrays.asList(options).indexOf(displayPreference)+1;
         if(index>= options.length)
@@ -268,10 +265,11 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
 
             editor.putString("right_display_option_list",newDisplayPref);
-            long[] powerValues = new long[]{preferences.getLong(rotateRightList[0],0),preferences.getLong(rotateRightList[1], 0)};
+            long[] powerValues = new long[]{preferences.getLong(rotateList[0],0),preferences.getLong(rotateList[1], 0)};
 
-            String[] display = SetDisplay(newDisplayPref, powerValues,preferences.getString(rotateRightList[3],"0.00"));
-            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager);
+            String[] display = SetDisplay(newDisplayPref, powerValues,preferences.getString(rotateList[3],"0.00"));
+            String time = preferences.getString("time",df.format(new Date()));
+            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager,time);
         }
         editor.commit();
     }
