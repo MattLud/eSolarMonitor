@@ -16,6 +16,7 @@ import android.widget.RemoteViews;
 import com.solartrackr.egauge.widget.util.EgaugeApiService;
 import com.solartrackr.egauge.widget.util.EgaugeIntents;
 import com.solartrackr.egauge.widget.util.NetworkConnection;
+import com.solartrackr.egauge.widget.util.extensions.DateExtensions;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 import com.solartrackr.egauge.widget.xml.Register;
 import com.solartrackr.egauge.widget.util.Formatter;
@@ -154,43 +155,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    private String[] SetDisplay(String displayPreference, long[] powerValues, String savings)
-    {
-        long gridTotal = powerValues[0];
-        long generationTotal = powerValues[1];
-
-        long usageTotal = gridTotal + generationTotal;
-
-        String displayValue;
-        String label = "";
-
-        Log.i(LOG_TAG, "Matching following display " + displayPreference );
-        System.out.println(displayPreference);
-        //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
-        switch (displayPreference) {
-            case "usage":
-                //move to strings
-                label = "Usage";
-                displayValue = Formatter.asWatts( ((float)usageTotal)).DisplayableValue;
-                break;
-            case "production":
-                //Panel output
-                label = "Solar Prod";
-                displayValue = Formatter.asWatts( ((float)generationTotal)).DisplayableValue;
-                break;
-            case "savings":
-                label = "Monthly Savings";
-                displayValue = "$" + savings;
-                break;
-            case "net_usage":
-            default:
-                label = "Net Usage";
-                displayValue = Formatter.asWatts( ((float)gridTotal)).DisplayableValue;
-        }
-
-        return new String[]{label, displayValue};
-    }
-
     private long[]GetProperRegisters(SharedPreferences preferences, EGaugeResponse response)
     {
         Map<String, Register> registerNames = new HashMap<>();
@@ -274,6 +238,44 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         editor.commit();
     }
 
+    private String[] SetDisplay(String displayPreference, long[] powerValues, String savings)
+    {
+        long gridTotal = powerValues[0];
+        long generationTotal = powerValues[1];
+
+        long usageTotal = gridTotal + generationTotal;
+
+        String displayValue;
+        String label = "";
+
+        Log.i(LOG_TAG, "Matching following display " + displayPreference );
+        System.out.println(displayPreference);
+        //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
+        switch (displayPreference) {
+            case "usage":
+                //move to strings
+                label = "Home";
+                displayValue = Formatter.asWatts( ((float)usageTotal)).DisplayableValue;
+                break;
+            case "production":
+                //Panel output
+                label = "Solar";
+                displayValue = Formatter.asWatts( ((float)generationTotal)).DisplayableValue;
+                break;
+            case "savings":
+                // grab month from now
+                final String month = DateExtensions.AsShortMonth( new Date());
+                label = String.format("Savings (%s)", month);
+                displayValue = "$" + savings;
+                break;
+            case "net_usage":
+            default:
+                label = "Net";
+                displayValue = Formatter.asWatts( ((float)gridTotal)).DisplayableValue;
+        }
+
+        return new String[]{label, displayValue};
+    }
 
     private void enableWidget(Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
