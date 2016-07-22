@@ -8,6 +8,9 @@ public class ValueDTO {
         this.FormattedValue = formattedValue;
 
         this.DisplayableValue = this.FormattedValue + this.Units;
+        if (this.Units.equalsIgnoreCase("$")) {
+            this.DisplayableValue = this.Units + this.FormattedValue;
+        }
     }
 
     public String Units;

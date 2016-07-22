@@ -39,8 +39,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String ROTATE_RIGHT_DISPLAY = "ROTATE_RIGHT_DISPLAY";
     //private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
 
-    private static final String [] rotateList = new String [] {"usage","production", "net_usage", "savings"};//, "bill"};
-    //private static final String [] rotateLeftList = new String [] {"refreshTime","monthlyUsage", "currentBill",};//, "bill"};
+    private static final String [] rotateList = new String [] {"production", "usage", "net_usage", "savings"};
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -113,18 +112,15 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
                 long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
 
-                //CurrentBillInfo bill = (CurrentBillInfo) leftObject;
-                //cache our new values here.
-
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putLong(rotateList[0], powerValues[0]);
                 editor.putLong(rotateList[1], powerValues[1]);
-                //skip unused cache
-                editor.putString(rotateList[3],kwhSavings.toString());
+                // this way we init our BigDecimal() from a string constructor arg
+                editor.putString(rotateList[3], kwhSavings.toString());
                 editor.putString("time", refreshTime);
                 editor.commit();
 
-                String[] rightDisplayValue = SetDisplay(displayPreference, powerValues,kwhSavings.toString());
+                String[] rightDisplayValue = SetDisplay(displayPreference, powerValues, kwhSavings);
                 DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager,refreshTime);
             }
         } else {
@@ -145,12 +141,13 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     }
 
 
-    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager,String time ) {
-        for (final int appWidgetId : appWidgetIds) {
+    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager, String time) {
 
+        for (final int appWidgetId : appWidgetIds) {
             views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
             views.setTextViewText(R.id.displayLabel, rightDisplayValue[1]);
-            views.setTextViewText(R.id.time, time);
+            views.setTextViewText(R.id.lastUpdated, time);
+
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
@@ -205,8 +202,6 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class));
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
 
-        final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
-        final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
         String displayPreference;
         String[] options;
 
@@ -228,28 +223,28 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
 
-            editor.putString("right_display_option_list",newDisplayPref);
-            long[] powerValues = new long[]{preferences.getLong(rotateList[0],0),preferences.getLong(rotateList[1], 0)};
+            long[] powerValues = new long[]{preferences.getLong(rotateList[0], 0), preferences.getLong(rotateList[1], 0)};
+            BigDecimal savings = new BigDecimal( preferences.getString(rotateList[3], "0"));
+            String[] display = SetDisplay(newDisplayPref, powerValues, savings);
+            String time = preferences.getString("time", df.format(new Date()));
 
-            String[] display = SetDisplay(newDisplayPref, powerValues,preferences.getString(rotateList[3],"0.00"));
-            String time = preferences.getString("time",df.format(new Date()));
-            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager,time);
+            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager, time);
+
+            editor.putString("right_display_option_list", newDisplayPref);
         }
         editor.commit();
     }
 
-    private String[] SetDisplay(String displayPreference, long[] powerValues, String savings)
+    private String[] SetDisplay(String displayPreference, long[] powerValues, BigDecimal dollarSavings)
     {
         long gridTotal = powerValues[0];
         long generationTotal = powerValues[1];
-
         long usageTotal = gridTotal + generationTotal;
 
-        String displayValue;
+        String displayValue = "";
         String label = "";
 
         Log.i(LOG_TAG, "Matching following display " + displayPreference );
-        System.out.println(displayPreference);
         //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
         switch (displayPreference) {
             case "usage":
@@ -263,10 +258,9 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 displayValue = Formatter.asWatts( ((float)generationTotal)).DisplayableValue;
                 break;
             case "savings":
-                // grab month from now
                 final String month = DateExtensions.AsShortMonth( new Date());
                 label = String.format("Savings (%s)", month);
-                displayValue = "$" + savings;
+                displayValue = Formatter.asDollars( dollarSavings).DisplayableValue;
                 break;
             case "net_usage":
             default:
