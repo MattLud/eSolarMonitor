@@ -30,6 +30,16 @@
         android:clickable="true"
         android:layout_alignParentLeft="false" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="--"
+        android:id="@+id/lastUpdated"
+        android:paddingLeft="10dp"
+        android:layout_alignBottom="@+id/settings_button"
+        android:layout_alignParentLeft="true" />
+
     <ImageButton
         android:src="@drawable/settings"
         android:id="@+id/settings_button"
@@ -47,17 +57,5 @@
         android:layout_centerVertical="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="--"
-        android:id="@+id/lastUpdated"
-        android:layout_marginLeft="17dp"
-        android:layout_marginStart="17dp"
-        android:layout_alignBottom="@+id/settings_button"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
 
 </RelativeLayout>
