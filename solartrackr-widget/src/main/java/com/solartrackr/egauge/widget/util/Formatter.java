@@ -2,6 +2,7 @@ package com.solartrackr.egauge.widget.util;
 
 import java.text.DecimalFormat;
 import java.math.RoundingMode;
+import java.math.BigDecimal;
 
 
 public class Formatter
@@ -47,8 +48,8 @@ public class Formatter
         return new ValueDTO(label, roundedWatts);
     }
 
-    public static ValueDTO asDollars(Double arg) {
-        return new ValueDTO("$", Integer.toString(arg.intValue()));
+    public static ValueDTO asDollars(BigDecimal arg) {
+        return new ValueDTO("$", Integer.toString( arg.intValue()));
     }
 
     public static float round(float value, int places) {
