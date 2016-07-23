@@ -16,6 +16,7 @@ import android.widget.RemoteViews;
 import com.solartrackr.egauge.widget.util.EgaugeApiService;
 import com.solartrackr.egauge.widget.util.EgaugeIntents;
 import com.solartrackr.egauge.widget.util.NetworkConnection;
+import com.solartrackr.egauge.widget.util.ReferralService;
 import com.solartrackr.egauge.widget.util.extensions.DateExtensions;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 import com.solartrackr.egauge.widget.xml.Register;
@@ -60,24 +61,29 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-
         //check if we should enable share button!
-        //TODO: Cleanup regenerated text on every build...
+        //TODO: Cleanup regenerated text on every build; use intermediate intent
         if(true)
         {
+
             views.setViewVisibility(R.id.share_button, View.VISIBLE);
             String token = preferences.getString("referral_token",null);
             if(token == null)
             {
-
+                ReferralService rs = new ReferralService();
+                token = rs.GetReferralToken();
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putString("referral_token",token);
+                editor.commit();
             }
             Intent share = new Intent(Intent.ACTION_SEND);
             share.setType("text/plain");
 
             // Add data to the intent, the receiving app will decide
             // what to do with it.
-            share.putExtra(Intent.EXTRA_SUBJECT, "I saved <money> this month with solar!");
-            share.putExtra(Intent.EXTRA_TEXT, "You can save too with <installer> - This referral <url> will get us both a $<money> gift card if you get one installed! ");
+            //todo: add money savings, etc.
+            share.putExtra(Intent.EXTRA_SUBJECT, "I saved  this month with solar!");
+            share.putExtra(Intent.EXTRA_TEXT, "You can save too with! ");
 
             PendingIntent sharePendingIntent = PendingIntent.getActivity(context, 0, Intent.createChooser(share, "Share link!"), 0);
             views.setOnClickPendingIntent(R.id.share_button, sharePendingIntent );
@@ -164,6 +170,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
             views.setTextViewText(R.id.displayLabel, rightDisplayValue[1]);
             views.setTextViewText(R.id.lastUpdated, time);
+
 
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }

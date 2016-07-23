@@ -5,9 +5,11 @@ package com.solartrackr.egauge.widget.util;
  */
 public class ReferralService {
 
-    public void GetReferralToken()
+    public String GetReferralToken()
     {
 
+
+        return "AlphaCharlieBravo";
 
     }
 
