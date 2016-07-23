@@ -8,7 +8,7 @@
         android:paddingLeft="10dip"
         android:paddingTop="10dip" />
 
-    <corners android:radius="5px" />
+    <corners android:radius="10dip" />
 
     <padding
         android:left="5dip"

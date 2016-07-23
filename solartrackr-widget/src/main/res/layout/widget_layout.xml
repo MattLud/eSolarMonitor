@@ -14,8 +14,8 @@
         android:id="@+id/lbl_display"
         android:textColor="#ffffff"
         android:gravity="center"
-        android:layout_alignTop="@+id/settings_button"
-        android:paddingLeft="10dp" />
+        android:paddingLeft="10dp"
+        android:layout_above="@+id/displayLabel" />
 
     <TextView
         android:id="@+id/displayLabel"
@@ -36,25 +36,31 @@
         android:text="--"
         android:id="@+id/lastUpdated"
         android:paddingLeft="10dp"
-        android:layout_alignBottom="@+id/settings_button"
-        android:layout_alignParentLeft="true" />
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/displayLabel" />
 
     <ImageButton
-        android:src="@drawable/settings"
-        android:id="@+id/settings_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/refresh_button"
-        android:layout_toLeftOf="@+id/refresh_button"
-        android:layout_toStartOf="@+id/refresh_button" />
-
-    <ImageButton
-        android:src="@drawable/refresh"
+        android:src="@drawable/recurring"
         android:id="@+id/refresh_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingRight="10dp"
         android:layout_centerVertical="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:background="#00ffffff" />
+
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/share_button"
+        android:src="@drawable/sharewhitenew"
+        android:visibility="visible"
+        android:background="#00ffffff"
+        android:layout_alignTop="@+id/refresh_button"
+        android:layout_toLeftOf="@+id/refresh_button"
+        android:layout_toStartOf="@+id/refresh_button"
+        android:paddingRight="10dp" />
 
 </RelativeLayout>
