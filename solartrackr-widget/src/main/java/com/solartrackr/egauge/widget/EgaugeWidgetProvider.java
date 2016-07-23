@@ -37,6 +37,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String POWER = "P";
     private DateFormat df = new SimpleDateFormat("hh:mma");
     private static final String ROTATE_RIGHT_DISPLAY = "ROTATE_RIGHT_DISPLAY";
+    private static final String SHARE = "SHARE";
     //private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
 
     private static final String [] rotateList = new String [] {"production", "usage", "net_usage", "savings"};
@@ -60,15 +61,31 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
-        if (showSettings) {
-            views.setViewVisibility(R.id.settings_button, View.VISIBLE);
-            views.setOnClickPendingIntent(R.id.settings_button, EgaugeIntents.createSettingsPendingIntent(context));
-        } else {
-            views.setViewVisibility(R.id.settings_button, View.GONE);
+        //check if we should enable share button!
+        //TODO: Cleanup regenerated text on every build...
+        if(true)
+        {
+            views.setViewVisibility(R.id.share_button, View.VISIBLE);
+            String token = preferences.getString("referral_token",null);
+            if(token == null)
+            {
+
+            }
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType("text/plain");
+
+            // Add data to the intent, the receiving app will decide
+            // what to do with it.
+            share.putExtra(Intent.EXTRA_SUBJECT, "I saved <money> this month with solar!");
+            share.putExtra(Intent.EXTRA_TEXT, "You can save too with <installer> - This referral <url> will get us both a $<money> gift card if you get one installed! ");
+
+            PendingIntent sharePendingIntent = PendingIntent.getActivity(context, 0, Intent.createChooser(share, "Share link!"), 0);
+            views.setOnClickPendingIntent(R.id.share_button, sharePendingIntent );
         }
 
-        views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
-        views.setOnClickPendingIntent(R.id.lbl_display,getPengingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
+
+        views.setOnClickPendingIntent(R.id.displayLabel, getPendingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
+        views.setOnClickPendingIntent(R.id.lbl_display, getPendingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
 
         if (showRefresh) {
             views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
@@ -311,8 +328,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         ComponentName thisAppWidget = new ComponentName(context.getPackageName(), getClass().getName());
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
         int ids[] = appWidgetManager.getAppWidgetIds(thisAppWidget);
-        if (EgaugeIntents.EGAUGE_WIDGET_UPDATE.equals(intent.getAction())) {
 
+        if (EgaugeIntents.EGAUGE_WIDGET_UPDATE.equals(intent.getAction())) {
             onUpdate(context, appWidgetManager, ids);
         } else if ("eGaugePreferencesUpdated".equals(intent.getAction())) {
             disableWidget(context);
@@ -324,7 +341,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
     }
 
-    protected PendingIntent getPengingSelfIntent(Context ctx, String action)
+    protected PendingIntent getPendingSelfIntent(Context ctx, String action)
     {
         Intent intent = new Intent(ctx, getClass());
         intent.setAction(action);
