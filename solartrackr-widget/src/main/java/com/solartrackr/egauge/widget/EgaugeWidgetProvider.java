@@ -78,12 +78,13 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             }
             Intent share = new Intent(Intent.ACTION_SEND);
             share.setType("text/plain");
+            String kwhSavings = preferences.getString(rotateList[3],null);
+
 
             // Add data to the intent, the receiving app will decide
             // what to do with it.
-            //todo: add money savings, etc.
-            share.putExtra(Intent.EXTRA_SUBJECT, "I saved  this month with solar!");
-            share.putExtra(Intent.EXTRA_TEXT, "You can save too with! ");
+            //todo: check if savings are too low - if so, roll back to last month or YTD or just say
+            share.putExtra(Intent.EXTRA_TEXT, "I saved "+ kwhSavings + " this month with solar! You can save too - Here's who I used for my panels.");
 
             PendingIntent sharePendingIntent = PendingIntent.getActivity(context, 0, Intent.createChooser(share, "Share link!"), 0);
             views.setOnClickPendingIntent(R.id.share_button, sharePendingIntent );
@@ -106,6 +107,11 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         BigDecimal kwhSavings = null;
         String refreshTime = df.format(new Date());
         if (enableSync) {
+            if(!NetworkConnection.hasNetworkConnection(context))
+            {
+                //drop out;
+                return;
+            }
             try {
                 EgaugeApiService apiService = EgaugeApiService.getInstance(context);
                 //get snapshot of usage
@@ -267,7 +273,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         String displayValue = "";
         String label = "";
-
+        Log.i(LOG_TAG, "Matching Savings pulled" + dollarSavings.toString());
         Log.i(LOG_TAG, "Matching following display " + displayPreference );
         //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
         switch (displayPreference) {

@@ -1,5 +1,7 @@
 package com.solartrackr.egauge.widget.util.billcalculators;
 
+import android.util.Log;
+
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -42,8 +44,9 @@ public class AustinEnergyBillCalculator implements IBillCalculator{
     private static String [] summerMonths = new String [] {"June", "July", "August", "September"};
 
 
-    public BigDecimal GetSavings(long solarKwh)
+    public BigDecimal GetSavings(double solarKwh)
     {
+        Log.i("BillCalc", "Solar to calculate" + solarKwh);
         return  solarPayback.multiply(new BigDecimal(solarKwh)).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 

@@ -5,9 +5,8 @@ import android.util.Log;
 
 import com.solartrackr.egauge.widget.NotConfiguredException;
 import com.solartrackr.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
-import com.solartrackr.egauge.widget.util.tasks.EGaugeApiComparisonData;
+import com.solartrackr.egauge.widget.util.tasks.EGaugeApiGetMonthToDate;
 import com.solartrackr.egauge.widget.util.tasks.EGaugeApiHistoricalData;
-import com.solartrackr.egauge.widget.xml.EGaugeComparison;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 
 import java.math.BigDecimal;
@@ -49,28 +48,27 @@ public class EgaugeApiService {
     }
 
     public BigDecimal getSavingsMonthToDate() throws ExecutionException, InterruptedException {
-        setUrlBase("http://lg1512.d.lighthousesolar.com/");
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.DAY_OF_MONTH, 1);
-        cal.set(Calendar.HOUR,0);
-        cal.set(Calendar.MINUTE,0);
-        cal.set(Calendar.AM_PM, Calendar.AM);
 
-        Calendar calendar = Calendar.getInstance();
+        Calendar firstOfMonth = Calendar.getInstance();
+        firstOfMonth.set(Calendar.DAY_OF_MONTH, 1);
+        firstOfMonth.set(Calendar.HOUR, 0);
+        firstOfMonth.set(Calendar.MINUTE, 0);
+        firstOfMonth.set(Calendar.SECOND, 0);
+        firstOfMonth.set(Calendar.MILLISECOND, 0);
+        firstOfMonth.set(Calendar.AM_PM, Calendar.AM);
+
+        Calendar currentTime = Calendar.getInstance();
         //http://lg1512.d.lighthousesolar.com/cgi-bin/egauge-show?C&T=1463646300,1462078800,
         HashMap data = new HashMap<>();
 
-        data.put("T", (int) (calendar.getTimeInMillis() / 1000) + "," + (int) (cal.getTimeInMillis() / 1000));
-        URL egauge = buildUrl("egauge-show",data,true);
-        EGaugeComparison monthToDateValues = new EGaugeApiComparisonData().execute(new URL[]{egauge}).get();
-        //weird issue with inconsistent xml structure of api return
-        // =if the MTD values are null, use the register value(second data element) in xml
-        if(monthToDateValues.getMTDValues()==null)
-        {
-            return new AustinEnergyBillCalculator().GetSavings(Math.abs(monthToDateValues.getRegisterValues().get(2))/ 3600000);
+        //offset a few  seconds due to CSV issues from android not being in proper time with Egauge device
+        data.put("T", (int) ((currentTime.getTimeInMillis()-10000) / 1000) + "," + (int) (firstOfMonth.getTimeInMillis() / 1000));
+        data.put("c",null);
+        URL egauge = buildUrl("egauge-show",data,false);
+        CSVTimePeriod monthToDateValues = new EGaugeApiGetMonthToDate().execute(new URL[]{egauge}).get();
+        Log.i(LOG_TAG, "Got generation MTD: " + monthToDateValues.getGeneration());
 
-        }
-        return new AustinEnergyBillCalculator().GetSavings(Math.abs(monthToDateValues.getMTDValues().get(2))/ 3600000);
+        return new AustinEnergyBillCalculator().GetSavings(monthToDateValues.getGeneration());
 
     }
 
@@ -111,4 +109,5 @@ public class EgaugeApiService {
     private void setUrlBase(String urlBase) {
         this.urlBase = (urlBase.endsWith("/") ? urlBase : urlBase + "/") + "cgi-bin/";
     }
+
 }
