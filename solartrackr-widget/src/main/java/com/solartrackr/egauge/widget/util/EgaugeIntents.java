@@ -3,6 +3,8 @@ package com.solartrackr.egauge.widget.util;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.widget.Toast;
+
 import com.solartrackr.egauge.widget.SettingsActivity;
 
 /**

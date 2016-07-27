@@ -2,19 +2,12 @@ package com.solartrackr.egauge.tests;
 
 import com.solartrackr.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
 import com.solartrackr.egauge.widget.util.billcalculators.IBillCalculator;
-import com.solartrackr.egauge.widget.xml.EGaugeComparison;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
@@ -67,8 +60,7 @@ public class BillCalculator {
         data.put("C", null);
         URL egauge = buildUrl("egauge-show",data);
 
-        EGaugeComparison testValue =  Getdata(new URL[]{egauge});
-        Assert.assertNotNull(testValue);
+        //Assert.assertNotNull(testValue);
 
     }
 
@@ -98,29 +90,5 @@ public class BillCalculator {
         return null;
     }
 
-    public EGaugeComparison Getdata(URL[] params)
-    {
-        try {
-
-            HttpURLConnection egaugeConnection = (HttpURLConnection) params[0].openConnection();
-            egaugeConnection.setConnectTimeout(5000);
-            egaugeConnection.setReadTimeout(5000);
-            egaugeConnection.setRequestMethod("GET");
-            Serializer serializer = new Persister();
-            InputStream in = new BufferedInputStream(egaugeConnection.getInputStream());
-            EGaugeComparison result = serializer.read(EGaugeComparison.class, in);
-
-            in.close();
-            egaugeConnection.disconnect();
-            return result;
-        } catch (IOException e) {
-            //disconnect, connect, or other general IO errors.
-            e.printStackTrace();
-        } catch (Exception e) {
-            //issue in input buffer
-            e.printStackTrace();
-        }
-        return null;
-    }
 
 }
