@@ -17,7 +17,7 @@ repositories {
 android {
 //  compileSdkVersion vs targetSdkVersion
 //  http://stackoverflow.com/questions/26694108/what-is-the-difference-between-compilesdkversion-and-targetsdkversion
-    compileSdkVersion 22
+    compileSdkVersion 21
     buildToolsVersion '23.0.2'
 
     defaultConfig {
