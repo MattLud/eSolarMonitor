@@ -52,16 +52,4 @@
         android:negativeButtonText="@null"
         android:positiveButtonText="@null" />
 
-    <CheckBoxPreference
-        android:key="show_settings_checkbox"
-        android:title="@string/pref_title_show_settings"
-        android:summary="@string/pref_desc_show_settings"
-        android:defaultValue="true" />
-
-    <CheckBoxPreference
-        android:key="show_refresh_checkbox"
-        android:title="@string/pref_title_show_refresh"
-        android:summary="@string/pref_desc_show_refresh"
-        android:defaultValue="true" />
-
 </PreferenceScreen>

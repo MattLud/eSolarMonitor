@@ -1,4 +1,4 @@
-package com.solartrackr.egauge.widget.util;
+package com.solartrackr.egauge.widget.util.support;
 
 /**
  * Created by mludlum on 7/26/16.

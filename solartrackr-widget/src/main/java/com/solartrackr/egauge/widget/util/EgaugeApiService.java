@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.solartrackr.egauge.widget.NotConfiguredException;
 import com.solartrackr.egauge.widget.util.billcalculators.AustinEnergyBillCalculator;
+import com.solartrackr.egauge.widget.util.support.CSVTimePeriod;
 import com.solartrackr.egauge.widget.util.tasks.EGaugeApiGetMonthToDate;
 import com.solartrackr.egauge.widget.util.tasks.EGaugeApiHistoricalData;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
@@ -17,18 +18,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-public class EgaugeApiService {
+public class EgaugeApiService implements EGaugeApiGetMonthToDate.EgaugeApiGetMonthToDateResponse, EGaugeApiHistoricalData.EgaugeApiHistoricalDataResponse {
 
-    private static EgaugeApiService singleton;
+    private Context context;
 
-    public static EgaugeApiService getInstance(Context context) throws NotConfiguredException {
-        if (singleton == null) {
-            singleton = new EgaugeApiService();
+    public EgaugeApiService(Context context) {
+        this.context = context;
+        try {
+            this.setUrlBase(PreferencesUtil.getEgaugeUrl(context));
+        } catch (NotConfiguredException e) {
+            e.printStackTrace();
         }
-        singleton.setUrlBase(PreferencesUtil.getEgaugeUrl(context));
-
-        return singleton;
     }
+
 
     private static final String LOG_TAG = "eGaugeApiService";
 
@@ -38,14 +40,6 @@ public class EgaugeApiService {
     private String urlBase;
 
 
-    public void getCurrentBill(int dataa) throws ExecutionException, InterruptedException
-    {
-        HashMap data = new HashMap<>();
-        data.put("n", 30);
-        data.put("D", null);
-        URL egauge = buildUrl("egauge",data,false);
-        EGaugeResponse hd = new EGaugeApiHistoricalData().execute(egauge).get();
-    }
 
     public BigDecimal getSavingsMonthToDate() throws ExecutionException, InterruptedException {
 
@@ -110,4 +104,13 @@ public class EgaugeApiService {
         this.urlBase = (urlBase.endsWith("/") ? urlBase : urlBase + "/") + "cgi-bin/";
     }
 
+    @Override
+    public void bucketResponse(CSVTimePeriod output) {
+
+    }
+
+    @Override
+    public void bucketHistoricalResponse(EGaugeResponse response) {
+
+    }
 }

@@ -20,7 +20,17 @@ import java.net.URL;
  */
 public class EGaugeApiHistoricalData extends AsyncTask<URL, Void, EGaugeResponse> {
 
+    public interface EgaugeApiHistoricalDataResponse{
+        void bucketHistoricalResponse(EGaugeResponse response);
+    }
+
     public static String LOG_TAG = "API_Async";
+    public  EgaugeApiHistoricalDataResponse delegate=null;
+
+//    @Override
+//    protected void onPostExecute(EGaugeResponse result) {
+//        delegate.bucketHistoricalResponse(result);
+//    }
     @Override
     protected EGaugeResponse doInBackground(URL[] params) {
 

@@ -15,12 +15,14 @@ import android.widget.RemoteViews;
 
 import com.solartrackr.egauge.widget.util.EgaugeApiService;
 import com.solartrackr.egauge.widget.util.EgaugeIntents;
-import com.solartrackr.egauge.widget.util.NetworkConnection;
+import com.solartrackr.egauge.widget.util.support.Installation;
+import com.solartrackr.egauge.widget.util.support.NetworkConnection;
+import com.solartrackr.egauge.widget.util.PreferencesUtil;
 import com.solartrackr.egauge.widget.util.ReferralService;
 import com.solartrackr.egauge.widget.util.extensions.DateExtensions;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 import com.solartrackr.egauge.widget.xml.Register;
-import com.solartrackr.egauge.widget.util.Formatter;
+import com.solartrackr.egauge.widget.util.support.Formatter;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
@@ -61,49 +63,13 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-        //check if we should enable share button!
-        //TODO: Cleanup regenerated text on every build; use intermediate intent
-        if(true)
-        {
-
-            views.setViewVisibility(R.id.share_button, View.VISIBLE);
-            String token = preferences.getString("referral_token",null);
-            if(token == null)
-            {
-                ReferralService rs = new ReferralService();
-                token = rs.GetReferralToken();
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putString("referral_token",token);
-                editor.commit();
-            }
-            Intent share = new Intent(Intent.ACTION_SEND);
-            share.setType("text/plain");
-            String kwhSavings = preferences.getString(rotateList[3],null);
-
-
-            // Add data to the intent, the receiving app will decide
-            // what to do with it.
-            //todo: check if savings are too low - if so, roll back to last month or YTD or just say
-            share.putExtra(Intent.EXTRA_TEXT, "I saved "+ kwhSavings + " this month with solar! You can save too - Here's who I used for my panels.");
-
-            PendingIntent sharePendingIntent = PendingIntent.getActivity(context, 0, Intent.createChooser(share, "Share link!"), 0);
-            views.setOnClickPendingIntent(R.id.share_button, sharePendingIntent );
-        }
 
 
         views.setOnClickPendingIntent(R.id.displayLabel, getPendingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
         views.setOnClickPendingIntent(R.id.lbl_display, getPendingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
-
-        if (showRefresh) {
-            views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
-            views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
-        } else {
-            views.setViewVisibility(R.id.refresh_button, View.GONE);
-        }
-
-
-        //change this to something better
-        EGaugeResponse object = null;
+        views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
+        views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
+        EGaugeResponse instantData = null;
         BigDecimal kwhSavings = null;
         String refreshTime = df.format(new Date());
         if (enableSync) {
@@ -113,9 +79,9 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 return;
             }
             try {
-                EgaugeApiService apiService = EgaugeApiService.getInstance(context);
+                EgaugeApiService apiService = new EgaugeApiService(context);
                 //get snapshot of usage
-                object = apiService.getData();
+                instantData = apiService.getData();
                 kwhSavings = apiService.getSavingsMonthToDate();
                 //get last bill total
                 //hard coded to 16
@@ -125,21 +91,19 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
-            } catch (NotConfiguredException e) {
-                e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
 
-            if (object ==null || kwhSavings == null) {
+            if (instantData ==null || kwhSavings == null) {
                 //views.setTextViewText(R.id.displayLabel, (String) object);
                 for (final int appWidgetId : appWidgetIds) {
                     appWidgetManager.updateAppWidget(appWidgetId, views);
                 }
-            } else if (object instanceof EGaugeResponse) {
+            } else if (instantData instanceof EGaugeResponse) {
 
-                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) object);
+                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) instantData);
 
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putLong(rotateList[0], powerValues[0]);
@@ -149,8 +113,38 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 editor.putString("time", refreshTime);
                 editor.commit();
 
+                //check if we should enable share button!
+                //TODO: Cleanup regenerated text on every build; use intermediate intent
+                String token = preferences.getString("referral_token","N/A");
+                long ticksSinceLastCheck = preferences.getLong("ticks_since_last_dial", 0);
+                //check if we checked in the last week
+                if(token == "N/A" || (Calendar.getInstance().getTimeInMillis()/1000)-ticksSinceLastCheck>=6048)
+                {
+                    Log.i(LOG_TAG, "Requesting " + token);
+                    ReferralService rs = new ReferralService(context);
+                    try {
+
+                        rs.GetReferralToken(Installation.id(context), instantData.getSerial(), PreferencesUtil.getEgaugeUrl(context));
+
+                    } catch (NotConfiguredException e) {
+                        e.printStackTrace();
+                    }
+                    editor.putLong("ticks_since_last_dial", Calendar.getInstance().getTimeInMillis() / 1000);
+                }
+                else if (token != "N/A") {
+                    Log.i(LOG_TAG, "Putting following token in URL" + token);
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("text/plain");
+                    // Add data to the intent, the receiving app will decide
+                    // what to do with it.
+                    //todo: check if savings are too low - if so, roll back to last month or YTD or just say
+                    share.putExtra(Intent.EXTRA_TEXT, "I saved $" + kwhSavings + " this month with solar! You can save too - Here's who I used for my panels. " + token);
+                    PendingIntent sharePendingIntent = PendingIntent.getActivity(context, 0, Intent.createChooser(share, "Share link!"), 0);
+                    views.setOnClickPendingIntent(R.id.share_button, sharePendingIntent);
+                }
+                editor.commit();
                 String[] rightDisplayValue = SetDisplay(displayPreference, powerValues, kwhSavings);
-                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager,refreshTime);
+                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager, refreshTime);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
