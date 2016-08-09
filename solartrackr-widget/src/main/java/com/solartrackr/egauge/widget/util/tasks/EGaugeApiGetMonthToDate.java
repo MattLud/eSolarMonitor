@@ -3,7 +3,7 @@ package com.solartrackr.egauge.widget.util.tasks;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.solartrackr.egauge.widget.util.CSVTimePeriod;
+import com.solartrackr.egauge.widget.util.support.CSVTimePeriod;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -16,11 +16,25 @@ import java.net.URL;
 /**
  * Created by mludlum on 5/26/16.
  */
+
+
+
 public class EGaugeApiGetMonthToDate extends AsyncTask<URL, Void, CSVTimePeriod> {
 
+    public interface EgaugeApiGetMonthToDateResponse{
+        void bucketResponse(CSVTimePeriod output);
+    }
 
+    public  EgaugeApiGetMonthToDateResponse delegate=null;
+
+//    @Override
+//    protected void onPostExecute(CSVTimePeriod result) {
+//        delegate.bucketResponse(result);
+//    }
 
     public static String LOG_TAG = "API_Async";
+
+
     @Override
     protected CSVTimePeriod doInBackground(URL[] params) {
 
