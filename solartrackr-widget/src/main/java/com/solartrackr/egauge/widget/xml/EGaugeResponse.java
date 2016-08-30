@@ -25,7 +25,7 @@ import java.util.List;
         </r>
     </data>
  */
-@Root(name = "data")
+@Root(name = "data",strict = false)
 public class EGaugeResponse {
     @Attribute
     private String serial;

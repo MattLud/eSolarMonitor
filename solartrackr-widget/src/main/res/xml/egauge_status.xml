@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="250dp"
+    android:minWidth="180dp"
     android:minHeight="40dp"
+    android:minResizeWidth="180dp"
     android:minResizeHeight="40dp"
-    android:minResizeWidth="110dp"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_layout"></appwidget-provider>
+    android:resizeMode="horizontal"
+    android:initialLayout="@layout/widget_layout">
+</appwidget-provider>
+<!-- default to 1x3 -->
+<!-- use, minWidth/minHeight -->
+
+<!-- allow resize to to 1x1 -->
+<!-- use, minResizeWidth/minResizeHeight -->
+
+<!-- as of 7/23/16, this is recommended formula for defining width/height dp -->
+<!-- https://developer.android.com/guide/practices/ui_guidelines/widget_design.html -->
+<!--
+    # desired grids represented as n
+    Size in dp = (n * 70) - 30
+-->
+

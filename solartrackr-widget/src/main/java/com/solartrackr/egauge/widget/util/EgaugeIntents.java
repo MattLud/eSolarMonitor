@@ -3,6 +3,8 @@ package com.solartrackr.egauge.widget.util;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.widget.Toast;
+
 import com.solartrackr.egauge.widget.SettingsActivity;
 
 /**
@@ -28,5 +30,7 @@ public class EgaugeIntents {
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
         return pendingIntent;
     }
+
+
 
 }

@@ -8,19 +8,23 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
-import android.widget.Toast;
 
 import com.solartrackr.egauge.widget.util.EgaugeApiService;
 import com.solartrackr.egauge.widget.util.EgaugeIntents;
-import com.solartrackr.egauge.widget.util.NetworkConnection;
+import com.solartrackr.egauge.widget.util.support.Installation;
+import com.solartrackr.egauge.widget.util.support.NetworkConnection;
+import com.solartrackr.egauge.widget.util.PreferencesUtil;
+import com.solartrackr.egauge.widget.util.ReferralService;
+import com.solartrackr.egauge.widget.util.extensions.DateExtensions;
 import com.solartrackr.egauge.widget.xml.EGaugeResponse;
 import com.solartrackr.egauge.widget.xml.Register;
+import com.solartrackr.egauge.widget.util.support.Formatter;
 
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -30,12 +34,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+
 public class EgaugeWidgetProvider extends AppWidgetProvider {
     private static final String LOG_TAG = "eGaugeWidget";
     private static final String POWER = "P";
     private DateFormat df = new SimpleDateFormat("hh:mma");
-    private static final String rotateCick = "rotateCick";
-    private static final String [] rotateList = new String [] {"usage","production", "net_usage"};//, "bill"};
+    private static final String ROTATE_RIGHT_DISPLAY = "ROTATE_RIGHT_DISPLAY";
+    private static final String SHARE = "SHARE";
+    //private static final String ROTATE_LEFT_DISPLAY = "ROTATE_LEFT_DISPLAY";
+
+    private static final String [] rotateList = new String [] {"production", "usage", "net_usage", "savings"};
 
     /**
      * Called when an update intent is received and also called by onReceive when our clock manager calls the method.
@@ -47,73 +55,95 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, final AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-
         final boolean enableSync = preferences.getBoolean("enable_sync_checkbox", false) && NetworkConnection.hasNetworkConnection(context);
-        //Add multiple fields in the future, one for solar payback/net meter/tier setup/auto config provider...etc. Likely will need it's own thing
-        final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
-        final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
 
-        final boolean showTime = preferences.getBoolean("show_time_checkbox", true);
-        final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
-        final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
-        final String displayPreference = preferences.getString("display_option_list", "net_usage");
+
+        final String displayPreference = preferences.getString("right_display_option_list", "net_usage");
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-        if (showSettings) {
-            views.setViewVisibility(R.id.settings_button, View.VISIBLE);
-            views.setOnClickPendingIntent(R.id.settings_button, EgaugeIntents.createSettingsPendingIntent(context));
-        } else {
-            views.setViewVisibility(R.id.settings_button, View.GONE);
-        }
-        views.setOnClickPendingIntent(R.id.displayLabel,getPengingSelfIntent(context, rotateCick));
-        if (showRefresh) {
-            views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
-            views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
-        } else {
-            views.setViewVisibility(R.id.refresh_button, View.GONE);
-        }
 
 
-        //change this to something better
-        String status = "Error";
-        EGaugeResponse response = null;
+        views.setOnClickPendingIntent(R.id.displayLabel, getPendingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
+        views.setOnClickPendingIntent(R.id.lbl_display, getPendingSelfIntent(context, ROTATE_RIGHT_DISPLAY));
+        views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
+        views.setOnClickPendingIntent(R.id.refresh_button, EgaugeIntents.createRefreshPendingIntent(context));
+        EGaugeResponse instantData = null;
+        BigDecimal kwhSavings = null;
+        String refreshTime = df.format(new Date());
         if (enableSync) {
+            if(!NetworkConnection.hasNetworkConnection(context))
+            {
+                //drop out;
+                return;
+            }
             try {
-                EgaugeApiService apiService = EgaugeApiService.getInstance(context);
-                response = apiService.getData();
+                EgaugeApiService apiService = new EgaugeApiService(context);
+                //get snapshot of usage
+                instantData = apiService.getData();
+                kwhSavings = apiService.getSavingsMonthToDate();
+                //get last bill total
+                //hard coded to 16
+                //leftObject = apiService.getCurrentBill(billTurnOverDate, insideCityOfAustin);
+
             } catch (InterruptedException e) {
-                Toast.makeText(context, "Test", Toast.LENGTH_SHORT);
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
-            } catch (NotConfiguredException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            if (showTime) {
-                views.setTextViewText(R.id.updatedLabel, df.format(new Date()));
-                views.setViewVisibility(R.id.updatedLabel, View.VISIBLE);
-            } else {
-                views.setViewVisibility(R.id.updatedLabel, View.GONE);
-            }
 
-
-            if (response == null) {
-                views.setTextViewText(R.id.displayLabel, (String) status);
+            if (instantData ==null || kwhSavings == null) {
+                //views.setTextViewText(R.id.displayLabel, (String) object);
                 for (final int appWidgetId : appWidgetIds) {
                     appWidgetManager.updateAppWidget(appWidgetId, views);
                 }
-            } else {
+            } else if (instantData instanceof EGaugeResponse) {
 
-                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) response);
-                //cache our new values here.
+                long[] powerValues = GetProperRegisters(preferences, (EGaugeResponse) instantData);
+
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putLong(rotateList[0], powerValues[0]);
                 editor.putLong(rotateList[1], powerValues[1]);
+                // this way we init our BigDecimal() from a string constructor arg
+                editor.putString(rotateList[3], kwhSavings.toString());
+                editor.putString("time", refreshTime);
                 editor.commit();
-                String[] displayValue = SetDisplay(displayPreference, powerValues);
-                DrawUpdate(views, displayValue, appWidgetIds, appWidgetManager);
+
+                //check if we should enable share button!
+                //TODO: Cleanup regenerated text on every build; use intermediate intent
+                String token = preferences.getString("referral_token","N/A");
+                long ticksSinceLastCheck = preferences.getLong("ticks_since_last_dial", 0);
+                //check if we checked in the last week
+                if(token == "N/A" || (Calendar.getInstance().getTimeInMillis()/1000)-ticksSinceLastCheck>=6048)
+                {
+                    Log.i(LOG_TAG, "Requesting " + token);
+                    ReferralService rs = new ReferralService(context);
+                    try {
+
+                        rs.GetReferralToken(Installation.id(context), instantData.getSerial(), PreferencesUtil.getEgaugeUrl(context));
+
+                    } catch (NotConfiguredException e) {
+                        e.printStackTrace();
+                    }
+                    editor.putLong("ticks_since_last_dial", Calendar.getInstance().getTimeInMillis() / 1000);
+                }
+                else if (token != "N/A") {
+                    Log.i(LOG_TAG, "Putting following token in URL" + token);
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("text/plain");
+                    // Add data to the intent, the receiving app will decide
+                    // what to do with it.
+                    //todo: check if savings are too low - if so, roll back to last month or YTD or just say
+                    share.putExtra(Intent.EXTRA_TEXT, "I saved $" + kwhSavings + " this month with solar! You can save too - Here's who I used for my panels. " + token);
+                    PendingIntent sharePendingIntent = PendingIntent.getActivity(context, 0, Intent.createChooser(share, "Share link!"), 0);
+                    views.setOnClickPendingIntent(R.id.share_button, sharePendingIntent);
+                }
+                editor.commit();
+                String[] rightDisplayValue = SetDisplay(displayPreference, powerValues, kwhSavings);
+                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager, refreshTime);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -133,49 +163,16 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     }
 
 
-    private void DrawUpdate(RemoteViews views, String[] displayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager )
-    {
-        for (final int appWidgetId : appWidgetIds) {
+    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager, String time) {
 
-            views.setTextViewText(R.id.lbl_display, displayValue[0]);
-            views.setTextViewText(R.id.displayLabel, displayValue[1] + "" + Register.REGISTER_TYPE_LABELS.get(POWER));
-            views.setTextColor(R.id.displayLabel, (Long.parseLong(displayValue[1]) > 0) ? Color.GREEN : Color.RED);
+        for (final int appWidgetId : appWidgetIds) {
+            views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
+            views.setTextViewText(R.id.displayLabel, rightDisplayValue[1]);
+            views.setTextViewText(R.id.lastUpdated, time);
+
+
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
-    }
-
-    private String[] SetDisplay(String displayPreference, long[] powerValues)
-    {
-        long gridTotal = powerValues[0];
-        long generationTotal = powerValues[1];
-
-        long usageTotal = gridTotal + generationTotal;
-
-        long displayValue;
-        String label = "";
-
-        Log.i(LOG_TAG, "Matching following display " + displayPreference );
-        //TODO: stick this in cache for rotate to use
-        switch (displayPreference) {
-            case "usage":
-                //move to strings
-                label = "House Use";
-                displayValue = usageTotal * -1;
-                //= new AbstractMap.SimpleEntry<String,String>("House Use", );
-                break;
-            case "production":
-                //Panel output
-                label = "Solar Prod";
-                displayValue = generationTotal;
-                break;
-            case "net_usage":
-            default:
-                displayValue = gridTotal * -1;
-                label = "Net Usage";
-        }
-
-        return new String[]{label, displayValue+""};
-
     }
 
     private long[]GetProperRegisters(SharedPreferences preferences, EGaugeResponse response)
@@ -221,37 +218,81 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
     }
 
 
-    private void rotateDisplay(Context context, Intent intent){
+    private void rotateDisplay(Context context, Intent intent, String leftOrRight){
         //widget id is tacked onto end of action
         String id = intent.getAction();
-        //int widgetId = Integer.parseInt(intent.getAction().substring(rotateCick.length()));
-
-
-
-        //TODO: push this up to parent action
         AppWidgetManager appWidgetManager =  AppWidgetManager.getInstance(context);
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, EgaugeWidgetProvider.class));
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        final boolean enableBillCalculate = preferences.getBoolean("enable_bill_calculate", true);
-        final boolean insideCityOfAustin = preferences.getBoolean("inside_city_of_austin", true);
-        String displayPreference = preferences.getString("display_option_list", "net_usage");
-        int index = Arrays.asList(rotateList).indexOf(displayPreference)+1;
-        if(index>=rotateList.length)
+
+        String displayPreference;
+        String[] options;
+
+        displayPreference = preferences.getString("right_display_option_list", "net_usage");
+        options = rotateList;
+
+        int index = Arrays.asList(options).indexOf(displayPreference)+1;
+        if(index>= options.length)
         {
             index = 0;
         }
-        String newDisplayPref = rotateList[index];
+        String newDisplayPref = options[index];
 
-        Log.i(LOG_TAG, "Rotating display on widgets to " + newDisplayPref );
+
+        Log.i(LOG_TAG, "Rotating display on widgets to " + newDisplayPref);
         //save our new preference
+
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("display_option_list",newDisplayPref);
+
+        if(leftOrRight.equals(ROTATE_RIGHT_DISPLAY)) {
+
+            long[] powerValues = new long[]{preferences.getLong(rotateList[0], 0), preferences.getLong(rotateList[1], 0)};
+            BigDecimal savings = new BigDecimal( preferences.getString(rotateList[3], "0"));
+            String[] display = SetDisplay(newDisplayPref, powerValues, savings);
+            String time = preferences.getString("time", df.format(new Date()));
+
+            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager, time);
+
+            editor.putString("right_display_option_list", newDisplayPref);
+        }
         editor.commit();
-        long[] powerValues = new long[]{preferences.getLong(rotateList[0],0),preferences.getLong(rotateList[1], 0)};
-        String[] display = SetDisplay(newDisplayPref, powerValues);
-        DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout),display, appWidgetIds, appWidgetManager);
     }
 
+    private String[] SetDisplay(String displayPreference, long[] powerValues, BigDecimal dollarSavings)
+    {
+        long gridTotal = powerValues[0];
+        long generationTotal = powerValues[1];
+        long usageTotal = gridTotal + generationTotal;
+
+        String displayValue = "";
+        String label = "";
+        Log.i(LOG_TAG, "Matching Savings pulled" + dollarSavings.toString());
+        Log.i(LOG_TAG, "Matching following display " + displayPreference );
+        //Also provide info on solar produced vs kwh consumed - you may not be able to do net metering!
+        switch (displayPreference) {
+            case "usage":
+                //move to strings
+                label = "Home";
+                displayValue = Formatter.asWatts( ((float)usageTotal)).DisplayableValue;
+                break;
+            case "production":
+                //Panel output
+                label = "Solar";
+                displayValue = Formatter.asWatts( ((float)generationTotal)).DisplayableValue;
+                break;
+            case "savings":
+                final String month = DateExtensions.AsShortMonth( new Date());
+                label = String.format("Savings (%s)", month);
+                displayValue = Formatter.asDollars( dollarSavings).DisplayableValue;
+                break;
+            case "net_usage":
+            default:
+                label = "Net";
+                displayValue = Formatter.asWatts( ((float)gridTotal)).DisplayableValue;
+        }
+
+        return new String[]{label, displayValue};
+    }
 
     private void enableWidget(Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
@@ -293,24 +334,23 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         ComponentName thisAppWidget = new ComponentName(context.getPackageName(), getClass().getName());
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
         int ids[] = appWidgetManager.getAppWidgetIds(thisAppWidget);
-        if (EgaugeIntents.EGAUGE_WIDGET_UPDATE.equals(intent.getAction())) {
 
+        if (EgaugeIntents.EGAUGE_WIDGET_UPDATE.equals(intent.getAction())) {
             onUpdate(context, appWidgetManager, ids);
         } else if ("eGaugePreferencesUpdated".equals(intent.getAction())) {
             disableWidget(context);
             enableWidget(context);
-        } else if (rotateCick.equals(intent.getAction()))
+        } else if (ROTATE_RIGHT_DISPLAY.equals(intent.getAction()))
         {
-            rotateDisplay(context, intent);
+            rotateDisplay(context, intent, ROTATE_RIGHT_DISPLAY);
         }
+
     }
 
-    protected PendingIntent getPengingSelfIntent(Context ctx, String action)
+    protected PendingIntent getPendingSelfIntent(Context ctx, String action)
     {
-            Intent intent = new Intent(ctx, getClass());
-            intent.setAction(action);
-            return PendingIntent.getBroadcast(ctx, 0, intent, 0);
+        Intent intent = new Intent(ctx, getClass());
+        intent.setAction(action);
+        return PendingIntent.getBroadcast(ctx, 0, intent, 0);
     }
-
-
 }

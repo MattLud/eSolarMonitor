@@ -14,7 +14,8 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
 
-import com.solartrackr.egauge.widget.util.PreferenceBinder;
+import com.solartrackr.egauge.widget.util.support.Installation;
+import com.solartrackr.egauge.widget.util.support.PreferenceBinder;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -151,6 +152,9 @@ public class SettingsActivity extends PreferenceActivity implements PreferenceBi
      */
     private static void bindPreferenceSummaryToValue(Preference preference) {
         // Set the listener to watch for value changes.
+
+        Installation.id(preference.getContext());
+
         preference.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
 
         // Trigger the listener immediately with the preference's

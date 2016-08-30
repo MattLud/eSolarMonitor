@@ -1,72 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="4dp"
     android:layout_gravity="right"
-    android:background="#000000">
-
-    <TextView
-        android:id="@+id/displayLabel"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:layout_width="wrap_content"
-        android:text="@string/not_available"
-        android:textColor="#ffffff"
-        android:paddingLeft="10dp"
-        android:paddingRight="0dp"
-        android:layout_centerVertical="true"
-        android:layout_toRightOf="@+id/lbl_refresh"
-        android:layout_toEndOf="@+id/lbl_refresh"
-        android:clickable="true" />
-
-    <TextView
-        android:id="@+id/updatedLabel"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:layout_width="wrap_content"
-        android:text="@string/not_available"
-        android:textColor="#ffffff"
-        android:paddingLeft="10dp"
-        android:paddingRight="20dp"
-        android:layout_below="@+id/lbl_refresh"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
-    <ImageButton
-        android:src="@drawable/settings"
-        android:id="@+id/settings_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/refresh_button"
-        android:layout_toLeftOf="@+id/refresh_button"
-        android:layout_toStartOf="@+id/refresh_button" />
-
-    <ImageButton
-        android:src="@drawable/refresh"
-        android:id="@+id/refresh_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="@string/lbl_refresh"
-        android:id="@+id/lbl_refresh"
-        android:textColor="#ffffff"
-        android:gravity="center"
-        android:paddingLeft="10dp"
-        android:textAlignment="center"
-        android:paddingRight="10dp"
-        android:layout_alignBaseline="@+id/lbl_display"
-        android:layout_alignBottom="@+id/lbl_display"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+    android:background="@drawable/widget_border">
 
     <TextView
         android:layout_width="wrap_content"
@@ -76,9 +14,56 @@
         android:id="@+id/lbl_display"
         android:textColor="#ffffff"
         android:gravity="center"
-        android:layout_alignTop="@+id/settings_button"
-        android:layout_toRightOf="@+id/lbl_refresh"
-        android:layout_toEndOf="@+id/lbl_refresh"
-        android:paddingLeft="10dp" />
+        android:paddingLeft="10dp"
+        android:layout_above="@+id/displayLabel" />
+
+    <TextView
+        android:id="@+id/displayLabel"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:layout_width="wrap_content"
+        android:text="@string/not_available"
+        android:textColor="#ffffff"
+        android:paddingLeft="10dp"
+        android:layout_centerVertical="true"
+        android:clickable="true"
+        android:layout_alignParentLeft="false" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="--"
+        android:id="@+id/lastUpdated"
+        android:paddingLeft="10dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/displayLabel" />
+
+    <ImageButton
+        android:src="@drawable/recurring"
+        android:id="@+id/refresh_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:background="@drawable/button_border"
+        android:outlineProvider="bounds"
+        android:paddingRight="10dp" />
+
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/share_button"
+        android:src="@drawable/sharewhitenew"
+        android:visibility="visible"
+        android:background="@drawable/button_border"
+        android:cropToPadding="false"
+        android:layout_alignBottom="@+id/refresh_button"
+        android:layout_toLeftOf="@+id/refresh_button"
+        android:layout_toStartOf="@+id/refresh_button"
+        android:layout_marginRight="24dp"
+        android:layout_marginEnd="24dp" />
 
 </RelativeLayout>
