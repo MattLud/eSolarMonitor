@@ -57,8 +57,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
         final boolean enableSync = preferences.getBoolean("enable_sync_checkbox", false) && NetworkConnection.hasNetworkConnection(context);
 
-        final boolean showSettings = preferences.getBoolean("show_settings_checkbox", true);
-        final boolean showRefresh = preferences.getBoolean("show_refresh_checkbox", true);
+
         final String displayPreference = preferences.getString("right_display_option_list", "net_usage");
 
         Log.i(LOG_TAG, "Pulled following preference " + displayPreference);

@@ -42,6 +42,10 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/egauge_status" />
         </receiver>
+
+        <activity
+            android:name="com.solartrackr.egauge.widget.About"
+            android:label="@string/title_activity_about"></activity>
     </application>
 
 </manifest>

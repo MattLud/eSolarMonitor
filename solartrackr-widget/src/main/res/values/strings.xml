@@ -6,4 +6,11 @@
     <string name="not_available">N/A</string>
     <string name="lbl_refresh">Last Refresh</string>
     <string name="lbl_display">Usage</string>
+    <string name="title_activity_about">About</string>
+    <string name="about">Developed By Moontower Innovations</string>
+    <string name="icon8_link"><a href="https://icons8.com/">Icons provided by Icons8.com </a></string>
+    <string name="version">SolarTrack v1.0</string>
+    <string name="project_link">Project hosted at https://github.com/MattLud/eSolarMonitor</string>
+    <string name="license">Licensed under Apache 2.0 - https://www.apache.org/licenses/LICENSE-2.0.txt</string>
+    <string name="back_help">Press back to go back to the settings...</string>
 </resources>

@@ -1,6 +1,7 @@
 <resources>
     <string name="title_activity_settings">SolarTrckr Settings</string>
-
+    <string name="title_about">About this App</string>
+    <string name="title_summary">Version, License, Etc...</string>
     <string name="pref_header_general">General</string>
 
     <string name="pref_title_enable_sync">Enable Synchronization</string>
