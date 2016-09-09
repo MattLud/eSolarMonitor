@@ -8,6 +8,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -143,7 +144,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
                 }
                 editor.commit();
                 String[] rightDisplayValue = SetDisplay(displayPreference, powerValues, kwhSavings);
-                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager, refreshTime);
+                int color = GetDisplayColor(displayPreference, powerValues[0]);
+                DrawUpdate(views, rightDisplayValue, appWidgetIds, appWidgetManager, refreshTime, color);
             }
         } else {
             Log.i(LOG_TAG, "eGauge sync not enabled.");
@@ -162,15 +164,26 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
         disableWidget(context);
     }
 
+    private int GetDisplayColor(String displayPreference, float powerTotal)
+    {
+        int color = Color.WHITE;
+        if(displayPreference == "net_usage" && powerTotal<-1)
+        {
+            color = Color.GREEN;
+        }
+        else if (displayPreference == "net_usage"){
+            color = Color.RED;
+        }
+        return color;
+    }
 
-    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager, String time) {
+    private void DrawUpdate(RemoteViews views, String[] rightDisplayValue, int [] appWidgetIds, AppWidgetManager appWidgetManager, String time, int displayColor) {
 
         for (final int appWidgetId : appWidgetIds) {
             views.setTextViewText(R.id.lbl_display, rightDisplayValue[0]);
             views.setTextViewText(R.id.displayLabel, rightDisplayValue[1]);
+            views.setTextColor(R.id.displayLabel, displayColor);
             views.setTextViewText(R.id.lastUpdated, time);
-
-
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
@@ -250,8 +263,8 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             BigDecimal savings = new BigDecimal( preferences.getString(rotateList[3], "0"));
             String[] display = SetDisplay(newDisplayPref, powerValues, savings);
             String time = preferences.getString("time", df.format(new Date()));
-
-            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager, time);
+            int color = GetDisplayColor(newDisplayPref, powerValues[0]);
+            DrawUpdate(new RemoteViews(context.getPackageName(), R.layout.widget_layout), display, appWidgetIds, appWidgetManager, time, color);
 
             editor.putString("right_display_option_list", newDisplayPref);
         }
@@ -288,7 +301,7 @@ public class EgaugeWidgetProvider extends AppWidgetProvider {
             case "net_usage":
             default:
                 label = "Net";
-                displayValue = Formatter.asWatts( ((float)gridTotal)).DisplayableValue;
+                displayValue = Formatter.asWatts( Math.abs((float)gridTotal)).DisplayableValue;
         }
 
         return new String[]{label, displayValue};
