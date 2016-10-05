@@ -4,6 +4,20 @@
     <string name="title_summary">Version, License, Etc...</string>
     <string name="pref_header_general">General</string>
 
+
+    <string name="pref_title_monitor_device">Solar Device</string>
+    <string-array name="pref_monitor_device_labels">
+        <item>eGauge</item>
+        <item>SolarEdge</item>
+    </string-array>
+
+    <string-array name="pref_monitor_device_values">
+        <item>egauge</item>
+        <item>solaredge</item>
+    </string-array>
+
+    <string name="title_egauge_category">eGauge Settings</string>
+
     <string name="pref_title_enable_sync">Enable Synchronization</string>
     <string name="pref_desc_enable_sync">Enable the widget to synchronize with your eGauge monitoring system</string>
 
